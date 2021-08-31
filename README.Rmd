@@ -1,0 +1,100 @@
+---
+title: "README"
+author: "Bob O'Hara"
+date: "8/29/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## LatentINLA Readme
+
+This package is made to play around with latent variable models in INLA. 
+
+## To Do
+
+- Make the code less WET 
+- look at speeding it up
+- are initial values going to help with speed or convergence?
+- Try a constrained model 
+- Try a spatial model, making the site scores spatial rather than iid.
+- plant some trees to offset the atmospheric warning created by running these models
+
+
+# Workflow
+
+- Format data
+- create LV vectors
+- write formula
+- make data list
+
+# Some code 
+
+```{r RunStuff, include=FALSE}
+
+# Format data
+  X <- 1:10
+  X.mat <- matrix(X, ncol=5)
+dat <- FormatDataFrameToLV(X.mat)
+
+# create LV vectors
+LVs <- lapply(1:4, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=dat)
+names(LVs) <- paste0("lv", 1:4)
+# write formula
+
+Formula <- formula(paste0("Y ~ " , CreateFormulaRHS(LVs=LVs)))
+
+# make data list
+
+Data.try <- as.list(as.data.frame(LVs))
+Data.try$Y <- dat
+
+
+Data.try$lv1.sp2
+
+# fit the model
+crapLVmodel = inla(Formula, data=Data.try, 
+family = rep("poisson", ncol(Data.try$Y)))
+
+
+summary(crapLVmodel)
+
+
+data =  list(Y=Count, Site=Site, Species=Species, lv1=lv1, 
+             lv1.sp2=lv1.sp2, lv1.sp3=lv1.sp3, lv1.sp4=lv1.sp4, lv1.sp5=lv1.sp5)
+
+
+p<-ncol(y)#number of species
+n<-nrow(y)#number of sites
+
+
+
+Count <- cbind(c(N[1:NSites], rep(NA, (NSp-1)*NSites)),
+               c(rep(NA, (NSp-4)*NSites), N[(NSp-4)*NSites + (1:NSites)], rep(NA, (NSp-2)*NSites)),
+               c(rep(NA, (NSp-3)*NSites), N[(NSp-3)*NSites + (1:NSites)], rep(NA, (NSp-3)*NSites)),
+               c(rep(NA, (NSp-2)*NSites), N[(NSp-2)*NSites + (1:NSites)], rep(NA, (NSp-4)*NSites)),
+               c(rep(NA, (NSp-1)*NSites), N[(NSp-1)*NSites + (1:NSites)]))
+
+# Latent variable factors
+lv1 <- c(1:NSites, rep(NA, (NSp-1)*NSites))
+lv1.sp2 <- c(rep(NA, 1*NSites), 1:NSites, rep(NA, (NSp-2)*NSites))
+lv1.sp3 <- c(rep(NA, 2*NSites), 1:NSites, rep(NA, (NSp-3)*NSites))
+lv1.sp4 <- c(rep(NA, 3*NSites), 1:NSites, rep(NA, (NSp-4)*NSites))
+lv1.sp5 <- c(rep(NA, 4*NSites), 1:NSites)
+
+data =  list(Y=Count, Site=Site, Species=Species, lv1=lv1, 
+             lv1.sp2=lv1.sp2, lv1.sp3=lv1.sp3, lv1.sp4=lv1.sp4, lv1.sp5=lv1.sp5)
+
+formula = Y ~ Species + f(lv1, model="iid") +
+  f(lv1.sp2, copy="lv1", hyper = list(beta = list(fixed = FALSE))) + 
+  f(lv1.sp3, copy="lv1", hyper = list(beta = list(fixed = FALSE))) + 
+  f(lv1.sp4, copy="lv1", hyper = list(beta = list(fixed = FALSE))) + 
+  f(lv1.sp5, copy="lv1", hyper = list(beta = list(fixed = FALSE)))
+
+oneLVmodel = inla(formula, data=data, family = rep("poisson", 5))
+summary(oneLVmodel)
+
+```
+

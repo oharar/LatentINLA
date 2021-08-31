@@ -1,9 +1,10 @@
 #' Format a data frame/matrix so that it is in the right format for INLA
 #'
-#' @param x data. A data frame or matrix
+#' @param dat data. A data frame or matrix
+#' @param nLVs The number of latent variables required
 #' @return A data frame with the same number of columns, but each row only has one value in it (the rest are NAs)
 #' @examples
-#' FormatDataFrameToLV(matrix(1:10, ncol=5))
+#' CreateLVIndices(matrix(1:10, ncol=5), nLVs=1)
 
 
 CreateLVIndices <- function(dat, nLVs=1) {

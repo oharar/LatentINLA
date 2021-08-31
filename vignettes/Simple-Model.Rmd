@@ -1,0 +1,66 @@
+---
+title: "Simple-Model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simple-Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This is a toy problem, to show how the code works.
+
+```{r setup}
+library(LatentINLA)
+library(INLA)
+
+```
+
+First, create a small data set. Too small to really do anything with other than see how it gets used.
+
+```{r CreateData}
+  X <- 1:10
+  X.mat <- matrix(X, ncol=5)
+  NLVs <- 3
+```
+
+So there are 5 species and a grand total of 2 sites. We will assume the data are counts, and use 3 latent variables. 
+
+So first we format the data:
+
+```{r FormatData}
+(dat <- FormatDataFrameForLV(X.mat))
+```
+
+
+
+```{r CreateLVs}
+# create LV vectors
+LVs <- lapply(1:NLVs, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=X.mat)
+names(LVs) <- paste0("lv", 1:NLVs)
+LVs[[2]]
+```
+
+Now we can write the formula:
+
+```{r CreateFormula}
+(Formula <- formula(paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))))
+```
+
+And finally fit the model. The results are rubbish, of course. But at least we have them.
+
+```{r FitModel}
+
+Data <- as.list(as.data.frame(LVs))
+Data$Y <- dat
+
+# fit the model
+toyLVmodel = inla(Formula, data=Data, family = rep("poisson", ncol(Data$Y)))
+summary(toyLVmodel)
+```

@@ -1,14 +1,22 @@
 Package: LatentINLA
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Package to Write GLLVMs in INLA
+Version: 0.0.1
+Author: Bob O'Hara
+Authors@R: person("Bob", "O'Hara", email = "bob.ohara@ntnu.no",
+  role = c("aut", "cre"))
+Description: The package implements some GLLVMs in INLA, hopefully in a way that the code can be adapted to new problems that we have not imagined yet.
+    At the moment, the GLLVM package is probably a better bet for what you want.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
+Imports:
+    INLA
 Suggests: 
-    testthat (>= 3.0.0)
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    mvabund
 Config/testthat/edition: 3
+VignetteBuilder: knitr
+RoxygenNote: 7.1.1

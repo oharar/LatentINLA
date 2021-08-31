@@ -1,12 +1,9 @@
-#' Format a data frame/matrix so that it is in the right format for INLA
+#' Create the right hand side of a formula with the specification for the latent variables.
 #'
-#' @param x data. A data frame or matrix
-#' @return A data frame with the same number of columns, but each row only has one value in it (the rest are NAs)
+#' @param LVs Output from the CreateLVIndices() function
+#' @return A formula
 #' @examples
-#' FormatDataFrameToLV(matrix(1:10, ncol=5))
-
-
-
+#' CreateFormulaRHS(CreateLVIndices(matrix(1:10, ncol=5)))
 
 
 CreateFormulaRHS <- function(LVs) {

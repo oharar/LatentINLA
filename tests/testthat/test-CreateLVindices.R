@@ -1,15 +1,10 @@
-context("FormatDataFrameToLV")
-
-# test it gives right results
-# test if it throws errors with non-matrices. see what happens with cbind()
-
 
 test_that("FitModel works correctly", {
   #  skip_on_cran()
   X <- 1:10
   X.mat <- matrix(X, ncol=5)
 
-  dat.mat <- FormatDataFrameToLV(X.mat)
+  dat.mat <- FormatDataFrameForLV(X.mat)
 
   OneLV <- CreateLVIndices(dat=X.mat, nLVs=1)
   TwoLVs <- CreateLVIndices(dat=X.mat, nLVs=2)
@@ -29,10 +24,10 @@ test_that("FitModel works correctly", {
 # Test values
 #  Should do this next test, but it gets hung up on the names being different, which I don't care about
 #  expect_equal(unlist(res.mat[1,]), as.integer(c(1, NA, NA, NA, NA)))
-  expect_equal(res.mat[,2], c(NA, NA, 1, 2, NA, NA, NA, NA, NA, NA))
+  expect_equal(OneLV[,2], c(NA, NA, 1, 2, NA, NA, NA, NA, NA, NA))
   expect_equal(unique(RowNos), 1)
 # Check names
-  expect_equal(names(OneLV), c("sp1", "sp2", "sp3", "sp4", "sp5"))
-  expect_equal(names(TwoLVs), c("sp2", "sp3", "sp4", "sp5"))
+  expect_equal(names(OneLV), c("L", "sp2", "sp3", "sp4", "sp5"))
+  expect_equal(names(TwoLVs), c("L", "sp3", "sp4", "sp5"))
 
 })

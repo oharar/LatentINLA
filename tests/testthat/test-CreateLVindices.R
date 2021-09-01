@@ -27,7 +27,7 @@ test_that("FitModel works correctly", {
   expect_equal(OneLV[,2], c(NA, NA, 1, 2, NA, NA, NA, NA, NA, NA))
   expect_equal(unique(RowNos), 1)
 # Check names
-  expect_equal(names(OneLV), c("L", "sp2", "sp3", "sp4", "sp5"))
-  expect_equal(names(TwoLVs), c("L", "sp3", "sp4", "sp5"))
+  expect_equal(names(OneLV), c("L", "col2", "col3", "col4", "col5"))
+  expect_equal(names(TwoLVs), c("L", "col3", "col4", "col5"))
 
 })

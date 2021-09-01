@@ -14,11 +14,13 @@ FitGLLVM(Y, X = NULL, nLVs = 1)
 \item{nLVs}{The number of latent variables required}
 }
 \value{
-(at the moment) an INLA object
+A list with fixed, colscores, and roweffs:
+the posterior summaries for the fixed effects, the column scores and the row
+effects respectively
 }
 \description{
 Fits a GLLVM to data
 }
 \examples{
-FitGLLVM(matrix(1:10, ncol=5), 1)
+FitGLLVM(matrix(1:10, ncol=5), nLVs=1)
 }

@@ -10,7 +10,7 @@ test_that("CreateFormulaRHS works correctly", {
 
   # Test size
   expect_equal(length(Formula), 1) # If this fails, we're in trouble
-  expect_equal(nchar(Formula), 528)
+  expect_equal(nchar(Formula), 535)
 
 # Should test more!
 })

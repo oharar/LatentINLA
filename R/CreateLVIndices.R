@@ -17,6 +17,6 @@ CreateLVIndices <- function(dat, nLVs=1) {
     out
   }
   res <- sapply(nLVs:ncol(dat), MakeIDs, df=dat, nlv=nLVs)
-  colnames(res) <- c("L", paste0("sp", (1+nLVs):ncol(dat)))
+  colnames(res) <- c("L", paste0("col", (1+nLVs):ncol(dat)))
   data.frame(res)
 }

@@ -24,6 +24,6 @@ test_that("Can correctly make indices for latent variables", {
 #  expect_equal(unlist(res.mat[1,]), as.integer(c(1, NA, NA, NA, NA)))
   expect_equal(LVs[[1]][,2], c(NA, NA, 1, 2, NA, NA, NA, NA, NA, NA))
 # Check names
-  expect_equal(names(LVs[[1]]), c("L", "sp2", "sp3", "sp4", "sp5"))
-  expect_equal(names(LVs[[2]]), c("L", "sp3", "sp4", "sp5"))
+  expect_equal(names(LVs[[1]]), c("L", "col2", "col3", "col4", "col5"))
+  expect_equal(names(LVs[[2]]), c("L", "col3", "col4", "col5"))
 })

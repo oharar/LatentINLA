@@ -15,21 +15,8 @@ This package is made to play around with latent variable models in INLA.
 
 ## To Do
 
-- Make the code less WET 
 - look at speeding it up
 - are initial values going to help with speed or convergence?
 - Try a constrained model 
 - Try a spatial model, making the site scores spatial rather than iid.
 - plant some trees to offset the atmospheric warning created by running these models
-
-
-# Workflow
-
-- Format data
-- create LV vectors
-- write formula
-- make data list
-
-# Some code 
-
-

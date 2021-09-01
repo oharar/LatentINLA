@@ -1,2 +1,3 @@
 exportPattern("^[[:alpha:]]+")
+export("FitGLLVM")
 importFrom("stats", "formula")

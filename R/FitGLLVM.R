@@ -65,7 +65,8 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...)
   res <- list(
     fixed = model$summary.fixed,
     colscores = ColScores,
-    roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))]
+    roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))],
+    formula = Formula
    )
   if(INLAobj) res$inla <- model
   res

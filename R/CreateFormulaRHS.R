@@ -4,7 +4,7 @@
 #' @return A formula
 #' @examples
 #' CreateFormulaRHS(CreateLVIndices(matrix(1:10, ncol=5)))
-
+#' @export
 
 CreateFormulaRHS <- function(LVs) {
   lvs <- 1:length(LVs)

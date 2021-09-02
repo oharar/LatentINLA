@@ -13,6 +13,9 @@
 
 #' @examples
 #' FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
+#' @export
+#'@importFrom stats formula
+
 
 
 FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...) {
@@ -66,8 +69,13 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...)
     fixed = model$summary.fixed,
     colscores = ColScores,
     roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))],
-    formula = Formula
+    formula = Formula,
+    call = match.call(),
+    family = table(family),
+    LL = model$mlik[2]
    )
   if(INLAobj) res$inla <- model
+  class(res) <- "iGLLVM"
+
   res
 }

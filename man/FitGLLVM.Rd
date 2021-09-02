@@ -15,19 +15,18 @@ FitGLLVM(Y, X = NULL, nLVs = 1, family = "gaussian", INLAobj = FALSE, ...)
 
 \item{nLVs}{The number of latent variables required}
 
-\item{family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.}
+\item{family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).}
 
-\item{INLAobj}{Should the full INLA object be included in the output object?
-Defaults to FALSE}
+\item{INLAobj}{Should the full INLA object be included in the output object? Defaults to \code{FALSE}}
 
-\item{...}{More arguments to be passed to inla()}
+\item{...}{More arguments to be passed to \code{inla()}}
 }
 \value{
 A list with fixed, colscores, and roweffs:
 the posterior summaries for the fixed effects, the column scores and the row
 effects respectively
 
-A list with fixed, colscores, and roweffs:
+A list with fixed, colscores, and roweffs, formula, Y, X, family..
 the posterior summaries for the fixed effects, the column scores and the row
 effects respectively
 }

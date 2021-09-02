@@ -1,0 +1,69 @@
+---
+title: "Constrained GLLVM from Scratch"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Constrained_GLLVM-from-Scratch}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# IGNORE THIS: IT IS WORK IN PROGRESS
+
+This is a toy problem, to show how the code works.
+
+https://www.r-inla.org/faq#h.pb4g1pwbmtli
+
+```{r setup}
+library(LatentINLA)
+
+```
+
+First, create a small data set. Too small to really do anything with other than see how it gets used.
+
+```{r CreateData}
+  Y.mat <- matrix(1:50, ncol=5)
+  Y <- rnorm(nrow(Y.mat))
+  NLVs <- 1
+```
+
+So there are 5 species and 10 sites. We will assume the data are counts, and use 1 latent variable. 
+
+First we format the data:
+
+```{r FormatData}
+dat <- FormatDataFrameForLV(Y.mat)
+```
+
+
+
+```{r CreateLVs, eval=FALSE}
+# create LV vectors
+LVs <- lapply(1:NLVs, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=Y.mat)
+names(LVs) <- paste0("lv", 1:NLVs)
+LVs[[2]]
+```
+
+Now we can write the formula:
+
+```{r CreateFormula, eval=FALSE}
+(Formula <- formula(paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))))
+```
+
+And finally fit the model. The results are rubbish, of course. But at least we have them.
+
+```{r FitModel, eval=FALSE}
+
+Data <- as.list(as.data.frame(LVs))
+Data$Y <- dat
+
+# fit the model
+toyLVmodel = inla(Formula, data=Data, family = rep("poisson", ncol(Data$Y)))
+summary(toyLVmodel)
+```

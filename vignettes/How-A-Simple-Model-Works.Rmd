@@ -1,8 +1,8 @@
 ---
-title: "Simple-Model"
+title: "How a Simple Model Works"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Simple-Model}
+  %\VignetteIndexEntry{How-a-Simple-Model-Works}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,49 @@ knitr::opts_chunk$set(
 )
 ```
 
-This is a toy problem, to show how the code works.
+
+## Introduction
+
+This vignette presents a toy problem, to explain the model and also show how the code inside FitGLLVM() works. One hope is that the code in this package will be used to build new models, so hopefully this vignette will help you work out which bits of code you can use, which you have to alter, and what new code to write.
+
+## The Model and How it Works in INLA
+
+The model here is a standard GLLVM. Essentially, each observation is a multivariate vector (the GLLVM package was developed in a context where each observation is, for example, counts of different species at a site):
+
+$$
+g(\mu_{ij}) =\sum_k{X_{ik} \beta_{jk}} + \sum_l{z_{il} \gamma_{jl}}
+$$
+
+The first term is the fixed effects, including an intercept. The second is the latent variables. Each latent variable has a row score and a column effect. If we don't constrain them, they are not identifiable. We will explain below how we do this.
+
+For simplicity, we will start by only considering one latent variable, and will ignore the intercept. Then, we fit a row effect to the first column:
+
+$$
+\mu_{i1} = z_{il} \sim N(0, \sigma_1^2)
+$$
+Where $\sigma_1^2$ is a hyperparameter, with the default INLA distribution. This is (as we will see in a moment) equivalent to setting $\gamma_{11} = 1$. For the second column (e.g. the second species) we copy this random effect from the first column:
+
+$$
+z_{i2} = \beta_{21} z_{i1} \sim N(0, \beta_{21}^2 \sigma_1^2)
+$$
+So the column score for the $j^{th}$ column is $\gamma_{1j} = \beta_{j1}$. The default prior for INLA is $\beta_j \sim N(1, 1/10)$: the variance is 0.1 (which is probably too tight). 
+
+Now, two latent variables. The first latent variable is as desceibed above. For the second latent variable, we set $\gamma_{12} =0$, i.e. the first column is not affected by the LV. The second latent variable gets defined for the second column, in the same way as before:
+
+$$
+\mu_{i1} = z_{i1} \\
+\mu_{i2} = z_{i1} + z_{i2} \\
+z_{i2} \sim N(0, \sigma_2^2)
+$$
+Using the same (default) $\sigma_l^2$ as before. So $\gamma_{22} = 1$. We then use the copy for the other columns (i.e. for $j>2$):
+
+$$
+\mu_{ij} = \beta_{j2} z_{i2} \sim N(0, \beta_{j2}^2 \sigma_2^2)
+$$
+his continues for the other latent variables, so in general $\gamma_{jl} = \beta_{jl}$. In essence, the matrix of column scores is a lower diagonal matrix, with 1s along the leading diagonal.
+
+
+## Code to fit the model
 
 ```{r setup}
 library(LatentINLA)
@@ -22,27 +64,25 @@ library(INLA)
 
 ```
 
-First, create a small data set. Too small to really do anything with other than see how it gets used.
+First, we create a small data set. Too small to really do anything with other than see how it gets used: hopefully in makes it easy to follow what the functions do by looking at their output.
 
 ```{r CreateData}
-  X <- 1:10
-  X.mat <- matrix(X, ncol=5)
+  Y <- 1:10
   NLVs <- 3
+  (Y.mat <- matrix(Y, ncol=5))
 ```
 
-So there are 5 species and a grand total of 2 sites. We will assume the data are counts, and use 3 latent variables. 
-
-So first we format the data:
+There are 5 columns and 2 rows. We will assume the data are counts, and use 3 latent variables. First we format the data so that INLA can deal with it properly. The data for each 'species' is put in a different column (this means if you want to use different likelihoods for different columns, you can do).
 
 ```{r FormatData}
-(dat <- FormatDataFrameForLV(X.mat))
+(dat <- FormatDataFrameForLV(Y.mat))
 ```
 
-
+Next we create the indices for the latent variable, so that we can project them to the different columns
 
 ```{r CreateLVs}
 # create LV vectors
-LVs <- lapply(1:NLVs, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=X.mat)
+LVs <- lapply(1:NLVs, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=Y.mat)
 names(LVs) <- paste0("lv", 1:NLVs)
 LVs[[2]]
 ```
@@ -52,6 +92,8 @@ Now we can write the formula:
 ```{r CreateFormula}
 (Formula <- formula(paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))))
 ```
+
+Which is lots of elements repeated: `f(lv1.L, model = "iid")` is the definition for $z_{il}$ (in this case the vector $z_{i1}$). `f(lv1.col2, copy = "lv1.L", hyper = list(beta = list(fixed = FALSE)))` defines $\gamma_{jl}$ (here $\gamma_{21}$): INLA calls it beta, of course.
 
 And finally fit the model. The results are rubbish, of course. But at least we have them.
 
@@ -64,3 +106,5 @@ Data$Y <- dat
 toyLVmodel = inla(Formula, data=Data, family = rep("poisson", ncol(Data$Y)))
 summary(toyLVmodel)
 ```
+
+The `Beta for lv1.col2`-like terms are the $\gamma_{jl}$ parameters. There are obviously no terms for $\gamma_{jj}$ (which are 1), or $\gamma_{jl}, j<l$, which are all 0. In the full function these are added to the results at the end (in a rather horrible way). 

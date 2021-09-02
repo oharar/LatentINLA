@@ -32,7 +32,7 @@ The first term is the fixed effects, including an intercept. The second is the l
 For simplicity, we will start by only considering one latent variable, and will ignore the intercept. Then, we fit a row effect to the first column:
 
 $$
-\mu_{i1} = z_{il} \sim N(0, \sigma_1^2)
+\mu_{i1} = z_{i1} \sim N(0, \sigma_1^2)
 $$
 Where $\sigma_1^2$ is a hyperparameter, with the default INLA distribution. This is (as we will see in a moment) equivalent to setting $\gamma_{11} = 1$. For the second column (e.g. the second species) we copy this random effect from the first column:
 

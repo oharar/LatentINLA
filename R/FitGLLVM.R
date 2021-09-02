@@ -3,11 +3,10 @@
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
 #' @param X A data frame or matrix of covariates (not used yet)
 #' @param nLVs The number of latent variables required
-#' @param family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
-#' @param INLAobj Should the full INLA object be included in the output object?
-#' Defaults to FALSE
-#' @param ... More arguments to be passed to inla()
-#' @return A list with fixed, colscores, and roweffs:
+#' @param family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
+#' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
+#' @param ... More arguments to be passed to \code{inla()}
+#' @return A list with fixed, colscores, and roweffs, formula, Y, X, family..
 #' the posterior summaries for the fixed effects, the column scores and the row
 #' effects respectively
 
@@ -15,10 +14,14 @@
 #' FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
 #' @export
 #'@importFrom stats formula
+#'@importFrom INLA inla inla.models
 
 
 
 FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...) {
+  if(any(!family%in%names(inla.models()$likelihood))){
+    stop(paste(unique(family)[which(!unique(family)%in%names(inla.models()$likelihood))],"is not a valid INLA family."))
+  }
   if(!is.data.frame(Y) & !is.matrix(Y)) stop("Y should be a matrix or data frame")
   if(length(family)!=1 & length(family)!=ncol(Y)) stop("family should be either a single value or a vector the same length as Y has columns")
   if(!is.null(X)) {
@@ -43,7 +46,7 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...)
 
   # fit the model
   if(length(family)==1) family <- rep(family, ncol(Data$Y))
-  model <- INLA::inla(formula(Formula), data=Data, family = family, ...)
+  model <- inla(formula(Formula), data=Data, family = family, ...)
 
 # Need to add missing species
 # I'm sure there is a more elegant way of doing this...
@@ -72,7 +75,9 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...)
     formula = Formula,
     call = match.call(),
     family = table(family),
-    LL = model$mlik[2]
+    LL = model$mlik[2],
+    Y = Y,
+    X = X
    )
   if(INLAobj) res$inla <- model
   class(res) <- "iGLLVM"

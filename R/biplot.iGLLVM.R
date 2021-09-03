@@ -68,6 +68,9 @@ biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), 
 
   text(species, col=spp.col,cex=spp.cex, labels = row.names(species))
   abline(v=0,h=0,lty="dashed",col="red")
+
+  #possibility to return LVs and species scores rotated to principal direction
+  invisible(list(rotLVs=lvs,rotSpec=species))
 }
 
 

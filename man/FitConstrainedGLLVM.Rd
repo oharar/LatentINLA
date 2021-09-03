@@ -2,9 +2,16 @@
 % Please edit documentation in R/FitConstrainedGLLVM.R
 \name{FitConstrainedGLLVM}
 \alias{FitConstrainedGLLVM}
-\title{Fits a constrained GLLVM to data}
+\title{Fits a GLLVM to data}
 \usage{
-FitConstrainedGLLVM(Y, X, nLVs = 1, family = "gaussian", INLAobj = FALSE, ...)
+FitConstrainedGLLVM(
+  Y,
+  X = NULL,
+  nLVs = 1,
+  family = "gaussian",
+  INLAobj = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Y}{A data frame or matrix with the response (assuming counts at the moment)}
@@ -26,11 +33,8 @@ the posterior summaries for the fixed effects, the column scores and the row
 effects respectively
 }
 \description{
-Fits a constrained GLLVM to data
-}
-\details{
-At the moment this is a place-holder.
+Fits a GLLVM to data
 }
 \examples{
-FitConstrainedGLLVM(Y=matrix(1:10, ncol=5), X=matrix(1:10, ncol=5), nLVs=1, family="poisson")
+FitConstrainedGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
 }

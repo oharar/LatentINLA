@@ -34,9 +34,6 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...)
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
 
-  cat("Tests done")
-
-
   # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
   Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))

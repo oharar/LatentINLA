@@ -2,6 +2,7 @@
 % Please edit documentation in R/biplot.iGLLVM.R
 \name{biplot.iGLLVM}
 \alias{biplot.iGLLVM}
+\alias{biplot}
 \title{Create biplot from iGLLVM object}
 \usage{
 \method{biplot}{iGLLVM}(

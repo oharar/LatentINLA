@@ -2,6 +2,7 @@
 % Please edit documentation in R/scores.iGLLVM.R
 \name{scores.iGLLVM}
 \alias{scores.iGLLVM}
+\alias{scores}
 \title{Extract scores from iGLLVM object}
 \usage{
 \method{scores}{iGLLVM}(object, which = "all", type.posterior.stat = "mean", ...)
@@ -23,6 +24,7 @@ Extract scores from iGLLVM object
 model <- FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
 scores(model)
 }
+
 }
 \author{
 Bert vd Veen

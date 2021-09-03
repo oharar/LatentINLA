@@ -20,9 +20,11 @@
 #' model <- FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
 #' biplot(model)
 #'}
-
-#'@rdname biplot
+#'@aliases biplot biplot.iGLLVM
+#'@method biplot iGLLVM
 #'@export
+#'@export biplot.iGLLVM
+
 biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), alpha = 0.5, site.labels = F, site.col = "black", site.cex = 1, site.pch = 1, spp.col="blue", spp.cex = 1, ...){
   #scaling code used from https://github.com/JenniNiku/gllvm/blob/master/R/ordiplot.gllvm.R
   if(class(object)!="iGLLVM"){
@@ -73,7 +75,7 @@ biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), 
   invisible(list(rotLVs=lvs,rotSpec=species))
 }
 
-#'@export
+#'@export biplot
 biplot <- function(object, ...)
 {
   UseMethod(generic = "biplot")

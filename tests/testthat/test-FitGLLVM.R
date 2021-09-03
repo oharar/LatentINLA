@@ -24,15 +24,16 @@ test_that("FitGLLVM works correctly", {
   #              "nLVs should be small: do you really want 16 of them?")
 
     # Test size
-  expect_equal(length(model.OneLV), 3)
+  expect_equal(length(model.OneLV), 9)
   expect_equal(length(model.OneLV$roweffs), 1)
-  expect_equal(length(model.TwoLVs), 3)
+  expect_equal(length(model.TwoLVs), 9)
   expect_equal(length(model.TwoLVs$roweffs), 2)
   expect_equal(nrow(model.OneLV$fixed), 1)
   expect_equal(nrow(model.OneLV$colscores), 5)
   expect_equal(nrow(model.OneLV$roweffs[[1]]), 10)
   expect_equal(nrow(model.TwoLVs$roweffs[[1]]), 10)
   expect_equal(nrow(model.TwoLVs$roweffs[[2]]), 10)
+  expect_equal(class(model.TwoLVs), "iGLLVM")
 
   expect_equal(nrow(model.X$fixed), 2)
 

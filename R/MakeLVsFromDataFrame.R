@@ -5,6 +5,7 @@
 #' @return list of data frames with indices for teh latent variables.
 #' @examples
 #' MakeLVsFromDataFrame(matrix(1:10, ncol=5), nLVs=1)
+#' @export
 
 MakeLVsFromDataFrame <- function(dat, nLVs) {
   if(nLVs<1 ) stop("nLVs should be positive")

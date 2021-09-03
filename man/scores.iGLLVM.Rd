@@ -4,7 +4,7 @@
 \alias{scores.iGLLVM}
 \title{Extract scores from iGLLVM object}
 \usage{
-\method{scores}{iGLLVM}(object, which = "all", type.posterior.stat = "mean")
+\method{scores}{iGLLVM}(object, which = "all", type.posterior.stat = "mean", ...)
 }
 \arguments{
 \item{object}{an object of class 'iGLLVM'}
@@ -13,7 +13,7 @@
 
 \item{type.posterior.stat}{which statistic to return of the posterior distributions: mean or mode.}
 
-\item{...}{not used.}
+\item{...}{extra arguments to be passed along.}
 }
 \description{
 Extract scores from iGLLVM object

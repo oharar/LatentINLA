@@ -12,10 +12,10 @@
 #' effects respectively
 
 #' @examples
-#' FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
+#' FitConstrainedGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
+#' @export
 
-
-FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...) {
+FitConstrainedGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...) {
   if(!is.data.frame(Y) & !is.matrix(Y)) stop("Y should be a matrix or data frame")
   if(length(family)!=1 & length(family)!=ncol(Y)) stop("family should be either a single value or a vector the same length as Y has columns")
   if(!is.null(X)) {
@@ -26,47 +26,48 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, family="gaussian", INLAobj = FALSE, ...)
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
 
+  res <- "Under construction. Builders on long tea break."
   # create LV vectors
-  LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
-  Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))
-  Data <- as.data.frame(LVs)
-  if(!is.null(X)) {
-    X.rep <- do.call("rbind", replicate(ncol(Y), X, simplify = FALSE))
-    Data <- cbind(Data, X.rep)
-    Formula <- paste0(Formula, " + ", paste0(colnames(X), collapse=" + "))
-  }
-  Data <- as.list(Data)
-  Data$Y <- FormatDataFrameForLV(Y)
-
-  # fit the model
-  if(length(family)==1) family <- rep(family, ncol(Data$Y))
-  model <- INLA::inla(formula(Formula), data=Data, family = family, ...)
-
-# Need to add missing species
-# I'm sure there is a more elegant way of doing this...
-  CS.tmp <- model$summary.hyperpar[grep("^Beta", rownames(model$summary.hyperpar)),]
-
-  CS.tmp$LV <- as.integer(gsub("\\..*", "", gsub("Beta for lv", "", rownames(CS.tmp))))
-  CS.tmp$Col <- as.integer(gsub("^.*col", "", rownames(CS.tmp)))
-  AllLevels <- expand.grid(Col=1:max(CS.tmp$Col), LV=1:max(CS.tmp$LV))
-
-  ColScores <- merge(CS.tmp, AllLevels, all=TRUE)
-
-  SetToOne <- sapply(unique(ColScores$LV), function(lv, df) {
-    max(which(df$LV==lv & is.na(df$mean)))
-  }, df=ColScores)
-  ColScores[SetToOne, c("mean", "mode")] <- 1
-  ColScores[is.na(ColScores$mean), c("mean", "mode")] <- 0
-  ColScores$sd[is.na(ColScores$sd)] <- 0
-
-  rownames(ColScores) <- paste0("Beta for lv", ColScores$LV, ".col", ColScores$Col)
-  ColScores[,c("LV", "Col")] <- NULL
-
-  res <- list(
-    fixed = model$summary.fixed,
-    colscores = ColScores,
-    roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))]
-   )
-  if(INLAobj) res$inla <- model
+#   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
+#   Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))
+#   Data <- as.data.frame(LVs)
+#   if(!is.null(X)) {
+#     X.rep <- do.call("rbind", replicate(ncol(Y), X, simplify = FALSE))
+#     Data <- cbind(Data, X.rep)
+#     Formula <- paste0(Formula, " + ", paste0(colnames(X), collapse=" + "))
+#   }
+#   Data <- as.list(Data)
+#   Data$Y <- FormatDataFrameForLV(Y)
+#
+#   # fit the model
+#   if(length(family)==1) family <- rep(family, ncol(Data$Y))
+#   model <- INLA::inla(formula(Formula), data=Data, family = family, ...)
+#
+# # Need to add missing species
+# # I'm sure there is a more elegant way of doing this...
+#   CS.tmp <- model$summary.hyperpar[grep("^Beta", rownames(model$summary.hyperpar)),]
+#
+#   CS.tmp$LV <- as.integer(gsub("\\..*", "", gsub("Beta for lv", "", rownames(CS.tmp))))
+#   CS.tmp$Col <- as.integer(gsub("^.*col", "", rownames(CS.tmp)))
+#   AllLevels <- expand.grid(Col=1:max(CS.tmp$Col), LV=1:max(CS.tmp$LV))
+#
+#   ColScores <- merge(CS.tmp, AllLevels, all=TRUE)
+#
+#   SetToOne <- sapply(unique(ColScores$LV), function(lv, df) {
+#     max(which(df$LV==lv & is.na(df$mean)))
+#   }, df=ColScores)
+#   ColScores[SetToOne, c("mean", "mode")] <- 1
+#   ColScores[is.na(ColScores$mean), c("mean", "mode")] <- 0
+#   ColScores$sd[is.na(ColScores$sd)] <- 0
+#
+#   rownames(ColScores) <- paste0("Beta for lv", ColScores$LV, ".col", ColScores$Col)
+#   ColScores[,c("LV", "Col")] <- NULL
+#
+#   res <- list(
+#     fixed = model$summary.fixed,
+#     colscores = ColScores,
+#     roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))]
+#    )
+#   if(INLAobj) res$inla <- model
   res
 }

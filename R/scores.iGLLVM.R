@@ -5,7 +5,7 @@
 #' @param object an object of class 'iGLLVM'
 #' @param which which scores to retrieve: all, sites, or species
 #' @param type.posterior.stat which statistic to return of the posterior distributions: mean or mode.
-#' @param ...	 not used.
+#' @param ...	 extra arguments to be passed along.
 #'
 #' @author Bert vd Veen
 #'
@@ -17,7 +17,7 @@
 #'@export
 #'@export scores
 
-scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean"){
+scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean", ...){
   if(class(object)!="iGLLVM"){
     stop("Object needs to be of class iGLLVM.")
   }
@@ -26,7 +26,8 @@ scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean"){
   }
   nLVs <- object$call$nLVs
   if(which=="all"){
-    sites <- matrix(unlist(lapply(object$roweffs,function(x,type.posterior.stat)x[type.posterior.stat],type.posterior.stat=type.posterior.stat)),ncol=nLVs)
+    sites <- matrix(unlist(lapply(object$roweffs,function(x,type.posterior.stat)
+      x[type.posterior.stat],type.posterior.stat=type.posterior.stat)),ncol=nLVs)
     species <-  matrix(unlist(object$colscores[type.posterior.stat]),ncol=nLVs)
     colnames(species)<-colnames(sites)<-paste("LV",1:nLVs,sep="")
     return(list(species=species,sites=sites))
@@ -35,7 +36,8 @@ scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean"){
     colnames(species)<-paste("LV",1:nLVs,sep="")
     return(species)
   }else if(which=="sites"){
-    sites <- matrix(unlist(lapply(object$roweffs,function(x,type.posterior.stat)x[type.posterior.stat],type.posterior.stat=type.posterior.stat)),ncol=nLVs)
+    sites <- matrix(unlist(lapply(object$roweffs,function(x,type.posterior.stat)
+      x[type.posterior.stat],type.posterior.stat=type.posterior.stat)),ncol=nLVs)
     colnames(sites)<-paste("LV",1:nLVs,sep="")
     return(sites)
   }

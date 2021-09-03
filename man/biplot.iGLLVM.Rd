@@ -8,6 +8,7 @@
   object,
   type.posterior.stat = "mean",
   which.lvs = c(1, 2),
+  alpha = 0.5,
   site.labels = F,
   site.col = "black",
   site.cex = 1,
@@ -23,6 +24,8 @@
 \item{type.posterior.stat}{which statistic to use from the posterior distributions: mean or mode}
 
 \item{which.lvs}{vector of length two with indexes of LVs to plot}
+
+\item{alpha}{scaling factor in biplot, defaults to 0.5 for equal species and site scaling}
 
 \item{site.labels}{should sites be plotted as labels or as symbols? Defaults to \code{FALSE} so symbols are plotted}
 

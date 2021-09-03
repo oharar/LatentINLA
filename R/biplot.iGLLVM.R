@@ -37,7 +37,16 @@ biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), 
   nLVs <- object$call$nLVs
   lvs <- scores(object, which="sites", type.posterior.stat=type.posterior.stat)
   species <- scores(object,which="species",type.posterior.stat=type.posterior.stat)
-
+  if(!is.null(colnames(object$Y))){
+    row.names(species) <- colnames(object$Y)
+  }else{
+    row.names(species) <- paste("spp",1:ncol(object$Y),sep=".")
+  }
+  if(!is.null(row.names(object$Y))){
+    row.names(lvs) <- row.names(object$Y)
+  }else{
+    row.names(sites) <- paste("site",1:nrow(object$Y),sep=".")
+  }
   rot <- svd(lvs)$v
 
   scl <- vector("numeric",ncol(lvs))
@@ -54,10 +63,10 @@ biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), 
 
     points(lvs,col=site.col, cex=site.cex, pch = site.pch)
   }else{
-    text(lvs,col=site.col, cex=site.cex)
+    text(lvs,col=site.col, cex=site.cex, labels = row.names(sites))
   }
 
-  text(species, col=spp.col,cex=spp.cex)
+  text(species, col=spp.col,cex=spp.cex, labels = row.names(species))
   abline(v=0,h=0,lty="dashed",col="red")
 }
 

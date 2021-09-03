@@ -15,7 +15,7 @@
 #' @export
 #'@importFrom stats formula
 #'@importFrom INLA inla inla.models
-
+#'@importFrom graphics abline points text
 
 
 FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {

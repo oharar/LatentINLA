@@ -14,9 +14,10 @@
 #' model <- FitGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
 #' scores(model)
 #'}
-#'@export
-#'@export scores
 
+
+#'@rdname scores
+#'@export
 scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean", ...){
   if(class(object)!="iGLLVM"){
     stop("Object needs to be of class iGLLVM.")
@@ -44,6 +45,7 @@ scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean", ...){
 
 }
 
+#'@export
 scores <- function(object,which,type.posterior.stat, ...)
 {
   UseMethod(generic = "scores")

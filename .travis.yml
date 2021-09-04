@@ -2,6 +2,6 @@
 
 language: R
 cache: packages
+r_github_packages: mvabund
 install:
   - Rscript -e 'install.packages("INLA",repos=c("https://cran.rstudio.com/", INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)'
-  - Rscript -e 'install.packages("mvabund")'

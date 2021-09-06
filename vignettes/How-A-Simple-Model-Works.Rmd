@@ -97,7 +97,7 @@ Which is lots of elements repeated: `f(lv1.L, model = "iid")` is the definition 
 
 And finally fit the model. The results are rubbish, of course. But at least we have them.
 
-```{r FitModel}
+```{r FitModel, eval=FALSE}
 
 Data <- as.list(as.data.frame(LVs))
 Data$Y <- dat

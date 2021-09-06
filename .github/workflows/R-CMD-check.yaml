@@ -41,9 +41,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v1
         with:
-          extra-packages: | 
-          rcmdcheck
-          mvabund
+          extra-packages: rcmdcheck mvabund
 
       - name: Check
         env:

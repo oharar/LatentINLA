@@ -1,8 +1,8 @@
 ---
-title: "Constrained-GLLVM-from-Scratch"
+title: "Constrained GLLVM from Scratch"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Constrained_GLLVM-from-Scratch}
+  %\VignetteIndexEntry{Constrained GLLVM from Scratch}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -83,16 +83,18 @@ dat2 <- rbind(dat, RowNAs)
 
 ```
 
-Now we create the covariate data. We only need this for the first data column and the LV column (the last colunm):
+Now we create the covariate data. We only need this for the first data column and the LV column (the last colunm). We add an index, `X.eps`, for the $\epsilon$'s:
 
-```{r CreateCovaraites}
-# Add intercept to covaraites
-X.int <- cbind(1, X)
+```{r CreateCovariates}
+X.eps <- cbind(1:nrow(X), X)
 # repeat covariates for data
-Cov.dat <- rbind(X.int, # For the first data column
-                 matrix(NA, ncol=ncol(X.int), nrow=nrow(dat3)-2*nrow(X.int)), # other columns
-                 X.int)  # For the LV
-colnames(Cov.dat) <- c("Intercept", "X1", "X2")
+Cov.dat <- rbind(X.eps, # For the first data column
+                 matrix(NA, ncol=ncol(X.eps), nrow=nrow(dat3)-2*nrow(X.eps)), # other columns
+                 X.eps)  # For the LV
+# Add Column effects
+Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y.mat), NA), each=nrow(Y.mat)))
+colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
+
 Cov.dat
 ```
 
@@ -122,12 +124,13 @@ Now we can write the formula. We add an intercept manually (we should really hav
 
 
 ```{r CreateFormula}
-Data <- list(Y = dat3, Intercept = Cov.dat[,"Intercept"], 
+Data <- list(Y = dat3, epsilon = Cov.dat[,"epsilon"], 
+             Column = Cov.dat[,"Column"], 
              X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
              LV=LV, w=w)
   
 Formula <- formula(
-  Y ~ Intercept + X1 + X2 + 
+  Y ~ Column + X1 + X2 + f(epsilon, model="iid") + 
     f(LV$L, w, model="iid", hyper = list(prec = list(initial = -6, fixed=TRUE))) + 
     f(LV$col3, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
     f(LV$col4, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
@@ -149,6 +152,7 @@ toyLVmodel = inla(Formula, data=Data,
 Now to show that this runs, using a larger data set. Firstwe create some data. 
 
 ```{r CreateBiggerData}
+set.seed(2021)
   NRows <- 200
   nLVs <- 1
   NCol <- 20
@@ -164,7 +168,7 @@ Now to show that this runs, using a larger data set. Firstwe create some data.
 ```
 
 
-Net the data is (are? Fight it out among yourselves) formatted:
+Next the data is (are? Fight it out among yourselves) formatted:
 
 ```{r ActuallyFormataModel}
 dat <- FormatDataFrameForLV(Y.mat)
@@ -174,11 +178,14 @@ dat2 <- rbind(dat, RowNAs)
 dat3 <- cbind(dat2, LV = c(rep(NA, nrow(dat)), rep(0, NRows)))
 
 # repeat covariates for data
-X.int <- cbind(1, X)
-Cov.dat <- rbind(X.int, 
-                 matrix(NA, ncol=ncol(X.int), nrow=nrow(dat3)-2*nrow(X.int)), 
-                 X.int)
-colnames(Cov.dat) <- c("Intercept", "X1", "X2")
+X.eps <- cbind(1:nrow(X), X)
+Cov.dat <- rbind(X.eps, 
+                 matrix(NA, ncol=ncol(X.eps), nrow=nrow(dat3)-2*nrow(X.eps)), 
+                 X.eps)
+# Add Column effects
+Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y.mat), NA), each=nrow(Y.mat)))
+colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
+
 
 # create LV vectors for data, and weight
 LV <- CreateLVIndices(dat=cbind(Y.mat, L=rep(0, nrow(Y.mat))), nLVs=nLVs)
@@ -186,7 +193,8 @@ LV <- LV[,-1]
 names(LV)[length(names(LV))] <- "L"
 w <- c(rep(NA, nrow(LV) - nrow(Y.mat)), rep(-1, nrow(Y.mat)))
 
-Data <- data.frame(Intercept = Cov.dat[,"Intercept"],
+Data <- data.frame(eps = Cov.dat[,"epsilon"],
+                   Column = factor(Cov.dat[, "Column"]), 
   X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
              LV=LV, w=w)
 Data$Y <- dat3
@@ -197,7 +205,7 @@ And finally we get to fit a model:
 ```{r ActuallyFitaModel}
 
 Formula <- formula(
-  paste0("Y ~ Intercept + X1 + X2 + ", 
+  paste0("Y ~ Column + X1 + X2 + f(eps, model='iid') + ", 
     "f(LV.L, w, model='iid', hyper = list(prec = list(initial = -6, fixed=TRUE))) + ", 
     paste0("f(", names(Data)[grep("LV.col", names(Data))], 
            ", copy = 'LV.L', hyper = list(beta = list(fixed = FALSE)))",
@@ -216,19 +224,20 @@ knitr::kable(fixed[,1:2], digits=3)
 
 ```
 
-At the moment is isn't working well. Some digging is needed...
+At the moment is isn't working well. The column effects should all be about 1, so the first column is too large. The covaraites get teh sign right, but the values are too large. We can look at the column effects, which ar OK except that (with the exception of column 1) they are too small.
 
-We can look at the column effects, which aren't great either:
-
-```{r ColEffs}
+```{r ColEffs, fig.height=4, fig.width=5}
 Betas <- LVmodel$summary.hyperpar[grep("^Beta",
                                            rownames(LVmodel$summary.hyperpar)),]
 
 ColScores <- rbind(c(1, 0, NA, NA, NA, 1), Betas)
 rownames(ColScores) <- paste0("col", 1:nrow(ColScores))
 
+par(mar=c(4.1,4.1,1,1))
 plot(ColEffs, ColScores[,1], xlab="True column effects", 
      ylab="Estimated column effects")
 segments(ColEffs, ColScores[,3], ColEffs, ColScores[,4])
 abline(0,1)
 ```
+
+So it looks like this might be partly working, but there is some scaling issue messing things up.

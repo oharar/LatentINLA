@@ -3,8 +3,10 @@ title: "Constrained-GLLVM-from-Scratch"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Constrained_GLLVM-from-Scratch}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -87,12 +89,12 @@ Now we create the covariate data. We only need this for the first data column an
 
 ```{r CreateCovaraites}
 # Add intercept to covaraites
-X.int <- cbind(1, X)
+X.int <- X
 # repeat covariates for data
 Cov.dat <- rbind(X.int, # For the first data column
                  matrix(NA, ncol=ncol(X.int), nrow=nrow(dat3)-2*nrow(X.int)), # other columns
                  X.int)  # For the LV
-colnames(Cov.dat) <- c("Intercept", "X1", "X2")
+colnames(Cov.dat) <- c("X1", "X2")
 Cov.dat
 ```
 
@@ -122,12 +124,12 @@ Now we can write the formula. We add an intercept manually (we should really hav
 
 
 ```{r CreateFormula}
-Data <- list(Y = dat3, Intercept = Cov.dat[,"Intercept"], 
+Data <- list(Y = dat3, 
              X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
              LV=LV, w=w)
   
 Formula <- formula(
-  Y ~ Intercept + X1 + X2 + 
+  Y ~ X1 + X2 + 
     f(LV$L, w, model="iid", hyper = list(prec = list(initial = -6, fixed=TRUE))) + 
     f(LV$col3, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
     f(LV$col4, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
@@ -149,14 +151,14 @@ toyLVmodel = inla(Formula, data=Data,
 Now to show that this runs, using a larger data set. Firstwe create some data. 
 
 ```{r CreateBiggerData}
-  NRows <- 200
+  NRows <- 100
   nLVs <- 1
-  NCol <- 20
+  NCol <- 30
   NCovs <- 2
   CovBeta <- c(-0.1, 0.7)
   ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
   X <- matrix(rnorm(NRows*NCovs, 0, 1), nrow=NRows)
-  LV.true <- X%*%CovBeta
+  LV.true <- X%*%CovBeta+mvtnorm::rmvnorm(NRows,rep(0,nLVs),diag(nLVs))
   E.Y <- 1+LV.true%*%ColEffs
 
   Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
@@ -171,14 +173,14 @@ dat <- FormatDataFrameForLV(Y.mat)
 # Add NA rows to data 
 RowNAs <- matrix(NA, nrow=NRows, ncol=NCol, dimnames=list(NULL, colnames(dat)))
 dat2 <- rbind(dat, RowNAs)
-dat3 <- cbind(dat2, LV = c(rep(NA, nrow(dat)), rep(0, NRows)))
+dat3 <- cbind(LV = c(rep(NA, nrow(dat)), rep(0, NRows)),dat2)
 
 # repeat covariates for data
-X.int <- cbind(1, X)
+X.int <- X
 Cov.dat <- rbind(X.int, 
                  matrix(NA, ncol=ncol(X.int), nrow=nrow(dat3)-2*nrow(X.int)), 
                  X.int)
-colnames(Cov.dat) <- c("Intercept", "X1", "X2")
+colnames(Cov.dat) <- c("X1", "X2")
 
 # create LV vectors for data, and weight
 LV <- CreateLVIndices(dat=cbind(Y.mat, L=rep(0, nrow(Y.mat))), nLVs=nLVs)
@@ -186,7 +188,7 @@ LV <- LV[,-1]
 names(LV)[length(names(LV))] <- "L"
 w <- c(rep(NA, nrow(LV) - nrow(Y.mat)), rep(-1, nrow(Y.mat)))
 
-Data <- data.frame(Intercept = Cov.dat[,"Intercept"],
+Data <- data.frame(
   X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
              LV=LV, w=w)
 Data$Y <- dat3
@@ -197,7 +199,7 @@ And finally we get to fit a model:
 ```{r ActuallyFitaModel}
 
 Formula <- formula(
-  paste0("Y ~ Intercept + X1 + X2 + ", 
+  paste0("Y ~ X1 + X2 + ", 
     "f(LV.L, w, model='iid', hyper = list(prec = list(initial = -6, fixed=TRUE))) + ", 
     paste0("f(", names(Data)[grep("LV.col", names(Data))], 
            ", copy = 'LV.L', hyper = list(beta = list(fixed = FALSE)))",
@@ -214,6 +216,8 @@ roweffs <- LVmodel$summary.random[grep("\\.L$", names(LVmodel$summary.random))]
 
 knitr::kable(fixed[,1:2], digits=3)
 
+#not bad
+vegan::procrustes(c(ColEffs),ColScores[,1],symmetric=T)
 ```
 
 At the moment is isn't working well. Some digging is needed...

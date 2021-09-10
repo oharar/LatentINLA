@@ -23,7 +23,7 @@ In a standard GLLVM the latent variables only affect the residual covariance, so
 Mathematically, we have
 
 $$
-g(E(Y_{ij}) = \beta_{0j} + \eta_{ij}
+g(E(Y_{ij})) = \beta_{0j} + \eta_{ij}
 $$
 
 for $i$ rows (= $i$ multivariate observations) and $j$ columns. Then 
@@ -36,14 +36,14 @@ i.e. the site scores are now regressed against the covariates.
 This is more difficult to set up in INLA. As with the simpler GLLVM, we will use the trick of defining the first latent variable on the first species, and then copying it onto the others. But now the latent variable is a linear predictor, not a single value. Luckily, [that problem has been solved](https://www.r-inla.org/faq#h.pb4g1pwbmtli) by the INLA team. The trick is to create a new variable. So for the first column, and with one latent variable, we have
 
 $$
-g(E(Y_{i1}) = \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} = \eta_{i1}
+g(E(Y_{i1})) = \beta_{0j} + \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} = \eta_{i1}
 $$
 i.e. it is a simple regression. Then we have to create another piece of "data":
 
 $$
-0 = \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} - \theta_{i1} + \varepsilon_{i1}
+0 = \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} - \theta_{i1} + \varepsilon_{i1} \approx \eta_{i1} - \theta_{i1}
 $$
-where we force $\varepsilon_{i1}$ to have a small variance (roughly, smaller than the MC error if we were fitting this with MCMC). This them means that $\theta_{i1} = \eta_{i1} + \varepsilon_{i1}$, and we can use `copy=` to move $\theta_{i1}$ around the model.
+where we force $\varepsilon_{i1}$ to have a small variance (roughly, smaller than the MC error if we were fitting this with MCMC). This then means that $\theta_{i1} = \eta_{i1} + \varepsilon_{i1}$, and we can use `copy=` to move $\theta_{i1}$ around the model.
 
 
 ## The Code

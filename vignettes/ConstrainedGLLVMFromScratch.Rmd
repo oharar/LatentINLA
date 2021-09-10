@@ -14,8 +14,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Constrained GLLVMs: this currently almost works
-
 ## Introduction
 
 In a standard GLLVM the latent variables only affect the residual covariance, so if there are a lot of covariates, we still have to estimate a lot of parameters. Here we fit a model where the covariates model the latent variables, and these then get projected (as a whole) onto the data.
@@ -144,12 +142,12 @@ And finally fit the model. We won't run this line, because INLA will hate it, th
 ```{r FitModel, eval=FALSE}
 # fit the model
 toyLVmodel = inla(Formula, data=Data, 
-                  family = c("gaussian", rep("poisson", ncol(Data$Y)-1)))
+                  family = c(rep("poisson", ncol(Data$Y)-1)), "gaussian")
 ```
 
 ## An Example that Runs
 
-Now to show that this runs, using a larger data set. Firstwe create some data. 
+Now to show that this runs, using a larger data set. First we create some data. 
 
 ```{r CreateBiggerData}
 set.seed(2021)
@@ -157,16 +155,17 @@ set.seed(2021)
   nLVs <- 1
   NCol <- 20
   NCovs <- 2
+  Intercept <- 1
   CovBeta <- c(-0.1, 0.7)
   ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
   X <- matrix(rnorm(NRows*NCovs, 0, 1), nrow=NRows)
   LV.true <- X%*%CovBeta
-  E.Y <- 1+LV.true%*%ColEffs
-
+  E.Y <- Intercept+LV.true%*%ColEffs
+  
+  TrueFixed <- c(Intercept, CovBeta)
   Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
 
 ```
-
 
 Next the data is (are? Fight it out among yourselves) formatted:
 
@@ -185,7 +184,6 @@ Cov.dat <- rbind(X.eps,
 # Add Column effects
 Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y.mat), NA), each=nrow(Y.mat)))
 colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
-
 
 # create LV vectors for data, and weight
 LV <- CreateLVIndices(dat=cbind(Y.mat, L=rep(0, nrow(Y.mat))), nLVs=nLVs)
@@ -214,17 +212,18 @@ Formula <- formula(
 
 # fit the model
 LVmodel = inla(Formula, data=Data, 
-                  family = c("gaussian", rep("poisson", ncol(Data$Y)-1)))
+                  family = c(rep("poisson", ncol(Data$Y)-1), "gaussian"))
 summ <- summary(LVmodel)
 
 fixed <- LVmodel$summary.fixed
 roweffs <- LVmodel$summary.random[grep("\\.L$", names(LVmodel$summary.random))]
 
-knitr::kable(fixed[,1:2], digits=3)
+knitr::kable(cbind(fixed[!grepl("Col", rownames(fixed)),1:2], True=TrueFixed), 
+             digits=3)
 
 ```
 
-At the moment is isn't working well. The column effects should all be about 1, so the first column is too large. The covaraites get teh sign right, but the values are too large. We can look at the column effects, which ar OK except that (with the exception of column 1) they are too small.
+The fixed effects look good (and no, this wasn't after trying it several times). We can look at the column effects, plotting them against their true values. They also look OK.
 
 ```{r ColEffs, fig.height=4, fig.width=5}
 Betas <- LVmodel$summary.hyperpar[grep("^Beta",
@@ -234,10 +233,10 @@ ColScores <- rbind(c(1, 0, NA, NA, NA, 1), Betas)
 rownames(ColScores) <- paste0("col", 1:nrow(ColScores))
 
 par(mar=c(4.1,4.1,1,1))
-plot(ColEffs, ColScores[,1], xlab="True column effects", 
+plot(ColEffs, ColScores[,"mean"], xlab="True column effects", 
      ylab="Estimated column effects")
-segments(ColEffs, ColScores[,3], ColEffs, ColScores[,4])
+segments(ColEffs, ColScores[,"0.025quant"], ColEffs, ColScores[,"0.975quant"])
 abline(0,1)
 ```
 
-So it looks like this might be partly working, but there is some scaling issue messing things up.
+So it looks like it is working. Hopefully the walk-through help you see how it all works. Even if it does feel like it is made with spaghetti.

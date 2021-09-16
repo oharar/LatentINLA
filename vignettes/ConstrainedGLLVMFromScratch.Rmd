@@ -2,7 +2,7 @@
 title: "Constrained GLLVM from Scratch"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Constrained_GLLVM-from-Scratch}
+  %\VignetteIndexEntry{Constrained GLLVM from Scratch}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,56 +14,234 @@ knitr::opts_chunk$set(
 )
 ```
 
-# IGNORE THIS: IT IS WORK IN PROGRESS
+## Introduction
 
-This is a toy problem, to show how the code works.
+In a standard GLLVM the latent variables only affect the residual covariance, so if there are a lot of covariates, we still have to estimate a lot of parameters. Here we fit a model where the covariates model the latent variables, and these then get projected (as a whole) onto the data.
 
-https://www.r-inla.org/faq#h.pb4g1pwbmtli
+Mathematically, we have
 
-```{r setup}
+$$
+g(E(Y_{ij})) = \beta_{0j} + \eta_{ij}
+$$
+
+for $i$ rows (= $i$ multivariate observations) and $j$ columns. Then 
+
+$$
+\eta_{ij} = k_i \gamma_j = (\mathbf{X}^T_{l,i} \mathbf{B} + \epsilon^T_i) \gamma_j
+$$
+i.e. the site scores are now regressed against the covariates.
+
+This is more difficult to set up in INLA. As with the simpler GLLVM, we will use the trick of defining the first latent variable on the first species, and then copying it onto the others. But now the latent variable is a linear predictor, not a single value. Luckily, [that problem has been solved](https://www.r-inla.org/faq#h.pb4g1pwbmtli) by the INLA team. The trick is to create a new variable. So for the first column, and with one latent variable, we have
+
+$$
+g(E(Y_{i1})) = \beta_{0j} + \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} = \eta_{i1}
+$$
+i.e. it is a simple regression. Then we have to create another piece of "data":
+
+$$
+0 = \sum_k {\beta_{k1} x_{ik}} + \epsilon_{i1} - \theta_{i1} + \varepsilon_{i1} \approx \eta_{i1} - \theta_{i1}
+$$
+where we force $\varepsilon_{i1}$ to have a small variance (roughly, smaller than the MC error if we were fitting this with MCMC). This then means that $\theta_{i1} = \eta_{i1} + \varepsilon_{i1}$, and we can use `copy=` to move $\theta_{i1}$ around the model.
+
+
+## The Code
+
+```{r setup, message=FALSE}
 library(LatentINLA)
+library(INLA)
 
 ```
 
 First, create a small data set. Too small to really do anything with other than see how it gets used.
 
 ```{r CreateData}
-  Y.mat <- matrix(1:50, ncol=5)
-  Y <- rnorm(nrow(Y.mat))
-  NLVs <- 1
+NRows <- 2
+NCols <- 3
+NCovs <- 2
+Y.mat <- matrix(1:(NRows*NCols), nrow=NRows, 
+                dimnames = list(NULL, paste0("col", 1:NCols)))
+X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
+                dimnames = list(NULL, paste0("X", 1:NCovs)))
+nLVs <- 1
 ```
 
-So there are 5 species and 10 sites. We will assume the data are counts, and use 1 latent variable. 
+So there are `r NCols` columns, `r NRows` rows and `r NCovs` covariates. We will assume the data follow a Poisson distribution, and use 1 latent variable. 
 
 First we format the data:
 
 ```{r FormatData}
-dat <- FormatDataFrameForLV(Y.mat)
+(dat <- FormatDataFrameForLV(Y.mat))
 ```
 
+Then we add an extra column for the latent variable. We will add it at the end of the data frame, because that will make the other coding a bit easier.
 
+```{r AddLVCol}
+# Add NA rows to data 
+RowNAs <- matrix(NA, nrow=NRows, ncol=NCols, dimnames=list(NULL, colnames(dat)))
+dat2 <- rbind(dat, RowNAs)
+(dat3 <- cbind(dat2, LV = c(rep(NA, nrow(dat)), rep(0, NRows))))
 
-```{r CreateLVs, eval=FALSE}
-# create LV vectors
-LVs <- lapply(1:NLVs, function(lv, dat) CreateLVIndices(dat=dat, nLVs=lv), dat=Y.mat)
-names(LVs) <- paste0("lv", 1:NLVs)
-LVs[[2]]
 ```
 
-Now we can write the formula:
+Now we create the covariate data. We only need this for the first data column and the LV column (the last colunm). We add an index, `X.eps`, for the $\epsilon$'s:
 
-```{r CreateFormula, eval=FALSE}
-(Formula <- formula(paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))))
+```{r CreateCovariates}
+X.eps <- cbind(1:nrow(X), X)
+# repeat covariates for data
+Cov.dat <- rbind(X.eps, # For the first data column
+                 matrix(NA, ncol=ncol(X.eps), nrow=nrow(dat3)-2*nrow(X.eps)), # other columns
+                 X.eps)  # For the LV
+# Add Column effects
+Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y.mat), NA), each=nrow(Y.mat)))
+colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
+
+Cov.dat
 ```
 
-And finally fit the model. The results are rubbish, of course. But at least we have them.
+Next we need to create the latent variables. Because we are putting the LV last, we almost just use the code to create the LVs as before: it already removes the link between column 1 and the LV.
+
+```{r CreateLVs}
+# create LV vectors for data
+LV <- CreateLVIndices(dat=cbind(L=rep(0, nrow(Y.mat)), Y.mat), nLVs=nLVs)
+(LV <- LV[,-1])
+```
+
+Finally, we need some weights for the latent variable:
+
+```{r CreateWeight}
+(w <- c(rep(NA, nrow(LV) - nrow(Y.mat)), rep(-1, nrow(Y.mat))))
+```
+
+How does this all work?
+
+- the data are regressed against column 1 of the data
+- the data are copied onto the LV data these minus the LV are regressed against 0. So at this point the only information about the effects of the covariates come from the first column: the LV absorbs all of the other information
+- the LV is then copied onto the other data columns, up to a proportionality constant (which is estimated, so is not really a constant).
+
+
+
+Now we can write the formula. We add an intercept manually (we should really have pne per column)
+
+
+```{r CreateFormula}
+Data <- list(Y = dat3, epsilon = Cov.dat[,"epsilon"], 
+             Column = Cov.dat[,"Column"], 
+             X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
+             LV=LV, w=w)
+  
+Formula <- formula(
+  Y ~ Column + X1 + X2 + f(epsilon, model="iid") + 
+    f(LV$L, w, model="iid", hyper = list(prec = list(initial = -6, fixed=TRUE))) + 
+    f(LV$col3, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
+    f(LV$col4, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
+    f(LV$col5, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) + 
+    f(LV$col6, copy = "LV$L", hyper = list(beta = list(fixed = FALSE))) - 1
+)
+```
+
+And finally fit the model. We won't run this line, because INLA will hate it, thanks to the lack of data. An example which runs is below.
 
 ```{r FitModel, eval=FALSE}
+# fit the model
+toyLVmodel = inla(Formula, data=Data, 
+                  family = c(rep("poisson", ncol(Data$Y)-1)), "gaussian")
+```
 
-Data <- as.list(as.data.frame(LVs))
-Data$Y <- dat
+## An Example that Runs
+
+Now to show that this runs, using a larger data set. First we create some data. 
+
+```{r CreateBiggerData}
+set.seed(2021)
+  NRows <- 200
+  nLVs <- 1
+  NCol <- 20
+  NCovs <- 2
+  Intercept <- 2
+  CovBeta <- c(-0.2, 0.7)
+  ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
+  X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
+              dimnames = list(NULL, paste0("X", 1:NCovs)))
+  LV.true <- rowSums(apply(X, 2, scale)%*%CovBeta)
+  E.Y <- Intercept+LV.true%*%ColEffs
+  
+  TrueFixed <- c(Intercept, CovBeta)
+  Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
+  colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
+  
+  
+```
+
+Next the data is (are? Fight it out among yourselves) formatted:
+
+```{r ActuallyFormataModel}
+dat <- FormatDataFrameForLV(Y.mat)
+# Add NA rows to data 
+RowNAs <- matrix(NA, nrow=NRows, ncol=NCol, dimnames=list(NULL, colnames(dat)))
+dat2 <- rbind(dat, RowNAs)
+dat3 <- cbind(dat2, LV = c(rep(NA, nrow(dat)), rep(0, NRows)))
+
+# repeat covariates for data
+X.eps <- cbind(1:nrow(X), X)
+Cov.dat <- rbind(X.eps, 
+                 matrix(NA, ncol=ncol(X.eps), nrow=nrow(dat3)-2*nrow(X.eps)), 
+                 X.eps)
+# Add Column effects
+Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y.mat), NA), each=nrow(Y.mat)))
+colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
+
+# create LV vectors for data, and weight
+LV <- CreateLVIndices(dat=cbind(Y.mat, L=rep(0, nrow(Y.mat))), nLVs=nLVs)
+LV <- LV[,-1]
+names(LV)[length(names(LV))] <- "L"
+w <- c(rep(NA, nrow(LV) - nrow(Y.mat)), rep(-1, nrow(Y.mat)))
+
+Data <- data.frame(eps = Cov.dat[,"epsilon"],
+                   Column = factor(Cov.dat[, "Column"]), 
+  X1 = Cov.dat[,"X1"], X2 = Cov.dat[,"X2"],
+             LV=LV, w=w)
+Data$Y <- dat3
+```
+
+And finally we get to fit a model:
+
+```{r ActuallyFitaModel}
+
+Formula <- formula(
+  paste0("Y ~ Column + X1 + X2 + f(eps, model='iid') + ", 
+    "f(LV.L, w, model='iid', hyper = list(prec = list(initial = -6, fixed=TRUE))) + ", 
+    paste0("f(", names(Data)[grep("LV.col", names(Data))], 
+           ", copy = 'LV.L', hyper = list(beta = list(fixed = FALSE)))",
+    collapse=" + "), collapse = "")
+)  
 
 # fit the model
-toyLVmodel = inla(Formula, data=Data, family = rep("poisson", ncol(Data$Y)))
-summary(toyLVmodel)
+LVmodel = inla(Formula, data=Data, 
+                  family = c(rep("poisson", ncol(Data$Y)-1), "gaussian"))
+summ <- summary(LVmodel)
+
+fixed <- LVmodel$summary.fixed
+roweffs <- LVmodel$summary.random[grep("\\.L$", names(LVmodel$summary.random))]
+
+knitr::kable(cbind(fixed[!grepl("Col", rownames(fixed)),1:2], True=TrueFixed), 
+             digits=3)
+
 ```
+
+The fixed effects look good (and no, this wasn't after trying it several times). We can look at the column effects, plotting them against their true values. They also look OK.
+
+```{r ColEffs, fig.height=4, fig.width=5}
+Betas <- LVmodel$summary.hyperpar[grep("^Beta",
+                                           rownames(LVmodel$summary.hyperpar)),]
+
+ColScores <- rbind(c(1, 0, NA, NA, NA, 1), Betas)
+rownames(ColScores) <- paste0("col", 1:nrow(ColScores))
+
+par(mar=c(4.1,4.1,1,1))
+plot(ColEffs, ColScores[,"mean"], xlab="True column effects", 
+     ylab="Estimated column effects")
+segments(ColEffs, ColScores[,"0.025quant"], ColEffs, ColScores[,"0.975quant"])
+abline(0,1)
+```
+
+So it looks like it is working. Hopefully the walk-through help you see how it all works. Even if it does feel like it is made with spaghetti.

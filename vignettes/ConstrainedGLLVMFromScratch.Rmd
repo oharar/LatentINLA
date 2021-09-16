@@ -56,10 +56,12 @@ First, create a small data set. Too small to really do anything with other than 
 
 ```{r CreateData}
 NRows <- 2
-NCols <- 5 
+NCols <- 3
 NCovs <- 2
-Y.mat <- matrix(1:(NRows*NCols), nrow=NRows)
-X <- matrix(10+1:(NCovs*NRows), nrow=NRows)
+Y.mat <- matrix(1:(NRows*NCols), nrow=NRows, 
+                dimnames = list(NULL, paste0("col", 1:NCols)))
+X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
+                dimnames = list(NULL, paste0("X", 1:NCovs)))
 nLVs <- 1
 ```
 
@@ -96,7 +98,7 @@ colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
 Cov.dat
 ```
 
-Next we need to create the latent variables. Because we are putting the LV first, we almost just use the code to create the LVs as before: it already removes the link between column 1 and the LV.
+Next we need to create the latent variables. Because we are putting the LV last, we almost just use the code to create the LVs as before: it already removes the link between column 1 and the LV.
 
 ```{r CreateLVs}
 # create LV vectors for data
@@ -155,16 +157,19 @@ set.seed(2021)
   nLVs <- 1
   NCol <- 20
   NCovs <- 2
-  Intercept <- 1
-  CovBeta <- c(-0.1, 0.7)
+  Intercept <- 2
+  CovBeta <- c(-0.2, 0.7)
   ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
-  X <- matrix(rnorm(NRows*NCovs, 0, 1), nrow=NRows)
-  LV.true <- X%*%CovBeta
+  X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
+              dimnames = list(NULL, paste0("X", 1:NCovs)))
+  LV.true <- rowSums(apply(X, 2, scale)%*%CovBeta)
   E.Y <- Intercept+LV.true%*%ColEffs
   
   TrueFixed <- c(Intercept, CovBeta)
   Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
-
+  colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
+  
+  
 ```
 
 Next the data is (are? Fight it out among yourselves) formatted:

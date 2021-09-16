@@ -15,5 +15,9 @@ FormatDataFrameForLV <- function(dat) {
              rep(NA, nrow(df)*(ncol(df)-wh)))
     out
   }, df=dat)
-  data.frame(res)
+
+  res <- as.data.frame(res)
+  names(res) <- colnames(dat)
+  res
 }
+

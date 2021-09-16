@@ -4,10 +4,12 @@
 \alias{CreateFormulaRHS}
 \title{Create the right hand side of a formula with the specification for the latent variables.}
 \usage{
-CreateFormulaRHS(LVs)
+CreateFormulaRHS(LVs, constrained = FALSE)
 }
 \arguments{
 \item{LVs}{Output from the CreateLVIndices() function}
+
+\item{constrained}{Logical: should the formula be for a constrained model? Defaults to FALSE}
 }
 \value{
 A formula

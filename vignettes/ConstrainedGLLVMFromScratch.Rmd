@@ -67,7 +67,7 @@ nLVs <- 1
 
 So there are `r NCols` columns, `r NRows` rows and `r NCovs` covariates. We will assume the data follow a Poisson distribution, and use 1 latent variable. 
 
-First we format the data:
+First we format the data, so it is a block diagional structure that INLA likes:
 
 ```{r FormatData}
 (dat <- FormatDataFrameForLV(Y.mat))
@@ -83,7 +83,7 @@ dat2 <- rbind(dat, RowNAs)
 
 ```
 
-Now we create the covariate data. We only need this for the first data column and the LV column (the last colunm). We add an index, `X.eps`, for the $\epsilon$'s:
+Now we create the covariate data. We only need this for the first data column and the LV column (the last column). We add an index, `X.eps`, for the $\epsilon$'s:
 
 ```{r CreateCovariates}
 X.eps <- cbind(1:nrow(X), X)
@@ -118,9 +118,7 @@ How does this all work?
 - the data are copied onto the LV data these minus the LV are regressed against 0. So at this point the only information about the effects of the covariates come from the first column: the LV absorbs all of the other information
 - the LV is then copied onto the other data columns, up to a proportionality constant (which is estimated, so is not really a constant).
 
-
-
-Now we can write the formula. We add an intercept manually (we should really have pne per column)
+Now we can write the formula. We add an intercept manually (we should really have one per column)
 
 
 ```{r CreateFormula}

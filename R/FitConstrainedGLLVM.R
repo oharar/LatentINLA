@@ -37,8 +37,8 @@
 
 FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {
 
-  if(any(!Family%in%names(inla.models()$likelihood))){
-    stop(paste(unique(Family)[which(!unique(Family)%in%names(inla.models()$likelihood))],
+  if(any(!Family%in%names(INLA::inla.models()$likelihood))){
+    stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
   }
   if(!is.data.frame(Y) & !is.matrix(Y)) stop("Y should be a matrix or data frame")

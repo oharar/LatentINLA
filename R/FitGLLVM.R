@@ -14,13 +14,12 @@
 #' FitGLLVM(matrix(1:10, ncol=5), nLVs=1, Family="poisson")
 #' @export
 #'@importFrom stats formula
-#'@importFrom INLA inla inla.models
 #'@importFrom graphics abline points text
 
 
 FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {
-  if(any(!Family%in%names(inla.models()$likelihood))){
-    stop(paste(unique(Family)[which(!unique(Family)%in%names(inla.models()$likelihood))],
+  if(any(!Family%in%names(INLA::inla.models()$likelihood))){
+    stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
   }
   if(!is.data.frame(Y) & !is.matrix(Y)) stop("Y should be a matrix or data frame")
@@ -48,7 +47,7 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...)
 
   # fit the model
   if(length(Family)==1) Family <- rep(Family, ncol(Data$Y))
-  model <- inla(formula(Formula), data=Data, family = Family, ...)
+  model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)
 
 # Need to add missing species
 # I'm sure there is a more elegant way of doing this...

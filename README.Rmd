@@ -5,6 +5,10 @@ date: "8/29/2021"
 output: html_document
 ---
 
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/oharar/LatentINLA/workflows/R-CMD-check/badge.svg)](https://github.com/oharar/LatentINLA/actions)
+  <!-- badges: end -->
+  
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```

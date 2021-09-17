@@ -200,10 +200,9 @@ Data <- data.frame(eps = Cov.dat[,"epsilon"],
 Data$Y <- dat3
 ```
 
-And finally we get to fit a model:
+And finally we get to fit a model. Or would do if this was stable enough. It crashes on some machines, so the code is disabled. Sorry.
 
-
-```{r ActuallyFitaModel}
+```{r ActuallyFitaModel, eval=FALSE}
 
 Formula <- formula(
   paste0("Y ~ Column + X1 + X2 + f(eps, model='iid') + ", 
@@ -229,7 +228,7 @@ knitr::kable(cbind(fixed[!grepl("Col", rownames(fixed)),1:2], True=TrueFixed),
 
 The fixed effects look good (and no, this wasn't after trying it several times). We can look at the column effects, plotting them against their true values. They also look OK.
 
-```{r ColEffs, fig.height=4, fig.width=5}
+```{r ColEffs, fig.height=4, fig.width=5, eval=FALSE}
 Betas <- LVmodel$summary.hyperpar[grep("^Beta",
                                            rownames(LVmodel$summary.hyperpar)),]
 

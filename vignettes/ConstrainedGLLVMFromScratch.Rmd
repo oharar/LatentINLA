@@ -215,7 +215,8 @@ Formula <- formula(
 
 # fit the model
 LVmodel = inla(Formula, data=Data, 
-                  family = c(rep("poisson", ncol(Data$Y)-1), "gaussian"))
+                  family = c(rep("poisson", ncol(Data$Y)-1), "gaussian"),
+               control.fixed = list(expand.factor.strategy="inla"))
 summ <- summary(LVmodel)
 
 fixed <- LVmodel$summary.fixed

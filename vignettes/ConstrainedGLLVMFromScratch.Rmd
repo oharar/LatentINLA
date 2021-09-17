@@ -120,7 +120,6 @@ How does this all work?
 
 Now we can write the formula. We add an intercept manually (we should really have one per column)
 
-
 ```{r CreateFormula}
 Data <- list(Y = dat3, epsilon = Cov.dat[,"epsilon"], 
              Column = Cov.dat[,"Column"], 
@@ -203,6 +202,7 @@ Data$Y <- dat3
 
 And finally we get to fit a model:
 
+
 ```{r ActuallyFitaModel}
 
 Formula <- formula(
@@ -241,5 +241,6 @@ plot(ColEffs, ColScores[,"mean"], xlab="True column effects",
 segments(ColEffs, ColScores[,"0.025quant"], ColEffs, ColScores[,"0.975quant"])
 abline(0,1)
 ```
+
 
 So it looks like it is working. Hopefully the walk-through help you see how it all works. Even if it does feel like it is made with spaghetti.

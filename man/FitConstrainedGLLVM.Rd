@@ -4,14 +4,7 @@
 \alias{FitConstrainedGLLVM}
 \title{Fits a GLLVM to data}
 \usage{
-FitConstrainedGLLVM(
-  Y,
-  X = NULL,
-  nLVs = 1,
-  family = "gaussian",
-  INLAobj = FALSE,
-  ...
-)
+FitConstrainedGLLVM(Y, X, nLVs = 1, Family = "gaussian", INLAobj = FALSE, ...)
 }
 \arguments{
 \item{Y}{A data frame or matrix with the response (assuming counts at the moment)}
@@ -20,7 +13,7 @@ FitConstrainedGLLVM(
 
 \item{nLVs}{The number of latent variables required}
 
-\item{family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.}
+\item{Family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.}
 
 \item{INLAobj}{Should the full INLA object be included in the output object?
 Defaults to FALSE}
@@ -36,5 +29,24 @@ effects respectively
 Fits a GLLVM to data
 }
 \examples{
-FitConstrainedGLLVM(matrix(1:10, ncol=5), nLVs=1, family="poisson")
+set.seed(2021)
+NRows <- 200
+nLVs <- 1
+NCol <- 20
+NCovs <- 2
+Intercept <- 2
+CovBeta <- matrix(c(-0.2, 0.7, 0.7, -0.2), nrow=2)
+ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
+X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
+            dimnames = list(NULL, paste0("X", 1:NCovs)))
+LV.true <- rowSums(apply(X, 2, scale)\%*\%CovBeta)
+E.Y <- Intercept+LV.true\%*\%ColEffs
+TrueFixed <- c(Intercept, CovBeta)
+Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
+colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
+\dontrun{
+  Try1 <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=1, Family="poisson", INLAobj = FALSE)
+  Try2 <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=2, Family="poisson",
+                              INLAobj = FALSE, verbose=TRUE)
+}
 }

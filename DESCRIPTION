@@ -1,7 +1,7 @@
 Package: LatentINLA
 Type: Package
 Title: Package to Write GLLVMs in INLA
-Version: 0.1.0
+Version: 0.1.1
 Author: Bob O'Hara
 Authors@R: person("Bob", "O'Hara", email = "bob.ohara@ntnu.no",
   role = c("aut", "cre"))

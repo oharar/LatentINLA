@@ -6,7 +6,8 @@ test_that("FitGLLVM works correctly", {
   X <- data.frame(x1=rep(1:2, times=5))
 
   model.OneLV <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=1)
-  model.TwoLVs <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=2)
+  model.TwoLVs <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=2,
+                           RowEff = "random")
 
   model.X <- FitGLLVM(Y=Y.mat, X=X, nLVs=1)
 
@@ -24,18 +25,18 @@ test_that("FitGLLVM works correctly", {
   #              "nLVs should be small: do you really want 16 of them?")
 
     # Test size
-  expect_equal(length(model.OneLV), 9)
+  expect_equal(length(model.OneLV), 11)
   expect_equal(length(model.OneLV$roweffs), 1)
-  expect_equal(length(model.TwoLVs), 9)
+  expect_equal(length(model.TwoLVs), 11)
   expect_equal(length(model.TwoLVs$roweffs), 2)
-  expect_equal(nrow(model.OneLV$fixed), 1)
+  expect_equal(nrow(model.OneLV$fixed), 15)
   expect_equal(nrow(model.OneLV$colscores), 5)
   expect_equal(nrow(model.OneLV$roweffs[[1]]), 10)
   expect_equal(nrow(model.TwoLVs$roweffs[[1]]), 10)
   expect_equal(nrow(model.TwoLVs$roweffs[[2]]), 10)
   expect_equal(class(model.TwoLVs), "iGLLVM")
 
-  expect_equal(nrow(model.X$fixed), 2)
+  expect_equal(nrow(model.X$fixed), 16)
 
 # Test values
 # These are currently not implemented
@@ -45,4 +46,13 @@ test_that("FitGLLVM works correctly", {
 
 # Check names
   expect_equal(rownames(model.OneLV$colscores)[2], "Beta for lv1.col2")
+
+  # Check row & col effects
+  expect_equal(nrow(model.OneLV$rowterm), 9)
+  expect_equal(nrow(model.OneLV$colterm), 5)
+
+  # Check row & col effects: here RowEff is random, so 1 more rowterm
+  expect_equal(nrow(model.TwoLVs$rowterm), 10)
+  expect_equal(nrow(model.TwoLVs$colterm), 5)
+
 })

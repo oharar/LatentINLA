@@ -4,7 +4,16 @@
 \alias{FitGLLVM}
 \title{Fits a GLLVM to data}
 \usage{
-FitGLLVM(Y, X = NULL, nLVs = 1, Family = "gaussian", INLAobj = FALSE, ...)
+FitGLLVM(
+  Y,
+  X = NULL,
+  nLVs = 1,
+  Family = "gaussian",
+  RowEff = "fixed",
+  ColEff = "fixed",
+  INLAobj = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Y}{A data frame or matrix with the response (assuming counts at the moment)}
@@ -15,14 +24,18 @@ FitGLLVM(Y, X = NULL, nLVs = 1, Family = "gaussian", INLAobj = FALSE, ...)
 
 \item{Family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).}
 
+\item{RowEff}{String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.}
+
+\item{ColEff}{String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.}
+
 \item{INLAobj}{Should the full INLA object be included in the output object? Defaults to \code{FALSE}}
 
 \item{...}{More arguments to be passed to \code{inla()}}
 }
 \value{
-A list with fixed, colscores, and roweffs, formula, Y, X, family..
-the posterior summaries for the fixed effects, the column scores and the row
-effects respectively
+A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
+the posterior summaries for the fixed effects, row main effects, the column main effect, the column scores and the row
+effects respectively. rowterm and colterm may be NULL if they were  not set to be random.
 }
 \description{
 Fits a GLLVM to data

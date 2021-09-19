@@ -4,11 +4,13 @@
 #' @param X A data frame or matrix of covariates (not used yet)
 #' @param nLVs The number of latent variables required
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
+#' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
+#' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
-#' @return A list with fixed, colscores, and roweffs, formula, Y, X, family..
-#' the posterior summaries for the fixed effects, the column scores and the row
-#' effects respectively
+#' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
+#' the posterior summaries for the fixed effects, row main effects, the column main effect, the column scores and the row
+#' effects respectively. rowterm and colterm may be NULL if they were  not set to be random.
 
 #' @examples
 #' FitGLLVM(matrix(1:10, ncol=5), nLVs=1, Family="poisson")
@@ -17,7 +19,9 @@
 #'@importFrom graphics abline points text
 
 
-FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {
+FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian",
+                     RowEff = "fixed", ColEff = "fixed",
+                     INLAobj = FALSE,...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
@@ -33,15 +37,45 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...)
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
 
+  if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
+
   # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
-  Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs))
+  Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs), " -1 ")
   Data <- as.data.frame(LVs)
+
+# Create explicit intercept
+  X.effs <- data.frame(Intercept=rep(1, ncol(Y)*nrow(Y)))
+  Formula <- paste0(Formula, " + Intercept")
+
+  # Make column effects
+  if(ColEff!="none") {
+    if(is.null(colnames(Y))) colnames(Y) <- 1:ncol(Y)
+    X.effs$column <- factor(rep(colnames(Y), each=nrow(Y)))
+    if(ColEff=="fixed") {
+      Formula <- paste0(Formula, " + column")
+    } else {
+      Formula <- paste0(Formula, " + f(column, model='iid')")
+    }
+  }
+# Make row effects
+  if(RowEff!="none") {
+    if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
+    X.effs$row <- factor(rep(rownames(Y), times=ncol(Y)))
+    if(RowEff=="fixed") {
+      Formula <- paste0(Formula, " + row")
+    } else {
+      Formula <- paste0(Formula, " + f(row, model='iid')")
+    }
+  }
+  Data <- cbind(Data, X.effs)
+
   if(!is.null(X)) {
     X.rep <- do.call("rbind", replicate(ncol(Y), X, simplify = FALSE))
     Data <- cbind(Data, X.rep)
     Formula <- paste0(Formula, " + ", paste0(colnames(X), collapse=" + "))
   }
+
   Data <- as.list(Data)
   Data$Y <- FormatDataFrameForLV(Y)
 
@@ -52,8 +86,25 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...)
 # Need to add missing species
   ColScores <- AddFixedColScores(model)
 
+
+  # If row or column effects are random, extract their values
+  # ifelse() does not seem to like returning a NULL, hence this construction
+  RowTerm <- NULL
+  ColTerm <- NULL
+  if(exists("row", model$summary.random))
+    RowTerm <- model$summary.random$row
+  if(exists("column", model$summary.random))
+    ColTerm <- model$summary.random$column
+  if(RowEff=="fixed")
+    RowTerm <- model$summary.fixed[grep("^row", rownames(model$summary.fixed)),]
+  if(ColEff=="fixed")
+    ColTerm <- model$summary.fixed[grep("^column", rownames(model$summary.fixed)),]
+
+
   res <- list(
     fixed = model$summary.fixed,
+    rowterm = RowTerm,
+    colterm = ColTerm,
     colscores = ColScores,
     roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))],
     formula = Formula,

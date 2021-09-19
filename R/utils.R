@@ -7,3 +7,28 @@ UnSparseMartix <- function(sparsemat) {
   }
   mat
 }
+
+# Function to add rows into summary for fixed column scores
+# I'm sure there is a more elegant way of doing this...
+AddFixedColScores <- function(mod) {
+  CS.tmp <- mod$summary.hyperpar[grep("^Beta", rownames(mod$summary.hyperpar)),]
+
+  CS.tmp$LV <- as.integer(gsub("\\..*", "", gsub("Beta for lv", "", rownames(CS.tmp))))
+  CS.tmp$Col <- as.integer(gsub("^.*[Cc]ol", "", rownames(CS.tmp)))
+  AllLevels <- expand.grid(Col=1:max(CS.tmp$Col), LV=1:max(CS.tmp$LV))
+
+  ColScores <- merge(CS.tmp, AllLevels, all=TRUE)
+
+  SetToOne <- sapply(unique(ColScores$LV), function(lv, df) {
+    max(which(df$LV==lv & is.na(df$mean)))
+  }, df=ColScores)
+
+  ColScores[SetToOne, c("mean", "mode")] <- 1
+  ColScores[is.na(ColScores$mean), c("mean", "mode")] <- 0
+  ColScores$sd[is.na(ColScores$sd)] <- 0
+
+  rownames(ColScores) <- paste0("Beta for lv", ColScores$LV, ".col", ColScores$Col)
+  ColScores[,c("LV", "Col")] <- NULL
+
+  ColScores
+}

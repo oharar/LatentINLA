@@ -50,24 +50,7 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian", INLAobj = FALSE, ...)
   model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)
 
 # Need to add missing species
-# I'm sure there is a more elegant way of doing this...
-  CS.tmp <- model$summary.hyperpar[grep("^Beta", rownames(model$summary.hyperpar)),]
-
-  CS.tmp$LV <- as.integer(gsub("\\..*", "", gsub("Beta for lv", "", rownames(CS.tmp))))
-  CS.tmp$Col <- as.integer(gsub("^.*col", "", rownames(CS.tmp)))
-  AllLevels <- expand.grid(Col=1:max(CS.tmp$Col), LV=1:max(CS.tmp$LV))
-
-  ColScores <- merge(CS.tmp, AllLevels, all=TRUE)
-
-  SetToOne <- sapply(unique(ColScores$LV), function(lv, df) {
-    max(which(df$LV==lv & is.na(df$mean)))
-  }, df=ColScores)
-  ColScores[SetToOne, c("mean", "mode")] <- 1
-  ColScores[is.na(ColScores$mean), c("mean", "mode")] <- 0
-  ColScores$sd[is.na(ColScores$sd)] <- 0
-
-  rownames(ColScores) <- paste0("Beta for lv", ColScores$LV, ".col", ColScores$Col)
-  ColScores[,c("LV", "Col")] <- NULL
+  ColScores <- AddFixedColScores(model)
 
   res <- list(
     fixed = model$summary.fixed,

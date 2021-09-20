@@ -17,6 +17,9 @@ A formula
 \description{
 Create the right hand side of a formula with the specification for the latent variables.
 }
+\details{
+The prior for the betas is currently fixed to be N(0,10^2) (i.e. mean 0, variance 100)
+}
 \examples{
 CreateFormulaRHS(CreateLVIndices(matrix(1:10, ncol=5)))
 }

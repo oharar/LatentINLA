@@ -3,6 +3,8 @@
 #' @param LVs Output from the CreateLVIndices() function
 #' @param constrained Logical: should the formula be for a constrained model? Defaults to FALSE
 #' @return A formula
+#' @details
+#' The prior for the betas is currently fixed to be N(0,10^2) (i.e. mean 0, variance 100)
 #' @examples
 #' CreateFormulaRHS(CreateLVIndices(matrix(1:10, ncol=5)))
 #' @export
@@ -17,7 +19,7 @@ CreateFormulaRHS <- function(LVs, constrained=FALSE) {
                ", w.", nm, ", model='iid', hyper = list(prec = list(initial = -6, fixed=TRUE)))"),
         paste0("f(", nm, ".", names(LV)[!grepl("^L", names(LV))],
                ", copy='", nm, ".", names(LV)[grep("^L", names(LV))],
-               "', hyper = list(beta = list(fixed = FALSE)))",
+               "', hyper = list(beta = list(param=c(0,0.01), initial=0, fixed = FALSE)))",
                collapse = " + ")
       )
     }, lvs=LVs)

@@ -7,6 +7,7 @@
 FitGLLVM(
   Y,
   X = NULL,
+  W = NULL,
   nLVs = 1,
   Family = "gaussian",
   RowEff = "fixed",
@@ -18,7 +19,9 @@ FitGLLVM(
 \arguments{
 \item{Y}{A data frame or matrix with the response (assuming counts at the moment)}
 
-\item{X}{A data frame or matrix of covariates (not used yet)}
+\item{X}{A data frame or matrix of covariates (strictly row-level covariates). Can be NULL}
+
+\item{W}{A data frame or matrix of column-level covariates. Can be NULL}
 
 \item{nLVs}{The number of latent variables required}
 

@@ -32,3 +32,10 @@ AddFixedColScores <- function(mod) {
 
   ColScores
 }
+
+
+# ifelse() that can return a NULL: needed here but probably has horrible
+#  side effects if not used with care
+ifelseNULL <- function(test, yes, no) {
+  if(test) yes else no
+}

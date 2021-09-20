@@ -35,8 +35,7 @@ We will use 2 latent variables.
 So first we format the data:
 
 ```{r FormatData, eval=TRUE}
-
-Spiders <- FitGLLVM(spider$abund)
+Spiders <- FitGLLVM(Y=spider$abund, Family="poisson")
 summary(Spiders)
 ```
 

@@ -2,7 +2,7 @@
 title: "How a Simple Model Works"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{How-a-Simple-Model-Works}
+  %\VignetteIndexEntry{How a Simple Model Works}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

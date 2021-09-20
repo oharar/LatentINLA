@@ -48,8 +48,8 @@ test_that("FitGLLVM works correctly", {
   expect_equal(rownames(model.OneLV$colscores)[2], "Beta for lv1.col2")
 
   # Check row & col effects
-  expect_equal(nrow(model.OneLV$rowterm), 9)
-  expect_equal(nrow(model.OneLV$colterm), 5)
+  expect_equal(nrow(model.OneLV$rowterm), 10)
+  expect_equal(nrow(model.OneLV$colterm), 4)
 
   # Check row & col effects: here RowEff is random, so 1 more rowterm
   expect_equal(nrow(model.TwoLVs$rowterm), 10)

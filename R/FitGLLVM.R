@@ -1,7 +1,8 @@
 #' Fits a GLLVM to data
 #'
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
-#' @param X A data frame or matrix of covariates (not used yet)
+#' @param X A data frame or matrix of covariates (strictly row-level covariates). Can be NULL
+#' @param W A data frame or matrix of column-level covariates. Can be NULL
 #' @param nLVs The number of latent variables required
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
 #' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
@@ -18,8 +19,7 @@
 #'@importFrom stats formula
 #'@importFrom graphics abline points text
 
-
-FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian",
+FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
                      INLAobj = FALSE,...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
@@ -31,7 +31,11 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian",
     stop("Family should be either a single value or a vector the same length as Y has columns")
   if(!is.null(X)) {
     if(nrow(X)!=nrow(Y)) stop("X and Y should have same number of rows")
-    if(!is.data.frame(X) & !is.matrix(X)) stop("Y should be a matrix or data frame")
+    if(!is.data.frame(X) & !is.matrix(X)) stop("X should be a matrix or data frame")
+  }
+  if(!is.null(W)) {
+    if(nrow(W)!=ncol(Y)) stop("W should have as many rows as Y has columns")
+    if(!is.data.frame(W) & !is.matrix(W)) stop("W should be a matrix or data frame")
   }
   if(nLVs<1 ) stop("nLVs should be positive")
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
@@ -39,53 +43,47 @@ FitGLLVM <- function(Y, X=NULL, nLVs=1, Family="gaussian",
 
   if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
 
+
   # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
-  Formula <- paste0("Y ~ " , CreateFormulaRHS(LVs=LVs), " -1 ")
-  Data <- as.data.frame(LVs)
+  LatentVectors <- as.data.frame(LVs)
+  attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs)
 
-# Create explicit intercept
-  X.effs <- data.frame(Intercept=rep(1, ncol(Y)*nrow(Y)))
-  Formula <- paste0(Formula, " + Intercept")
+# Create data frame of row covariates,
+#  including intercept and (if wanted) row effect
+  X.effs <- FormatCovariateData(X=X, intercept=TRUE, nrows=nrow(Y),
+                                AddTerm = ifelseNULL(RowEff=="none", NULL, "row"),
+                                random = ifelseNULL(RowEff=="random", "row", NULL)
+  )
 
-  # Make column effects
-  if(ColEff!="none") {
-    if(is.null(colnames(Y))) colnames(Y) <- 1:ncol(Y)
-    X.effs$column <- factor(rep(colnames(Y), each=nrow(Y)))
-    if(ColEff=="fixed") {
-      Formula <- paste0(Formula, " + column")
-    } else {
-      Formula <- paste0(Formula, " + f(column, model='iid')")
-    }
-  }
-# Make row effects
-  if(RowEff!="none") {
-    if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
-    X.effs$row <- factor(rep(rownames(Y), times=ncol(Y)))
-    if(RowEff=="fixed") {
-      Formula <- paste0(Formula, " + row")
-    } else {
-      Formula <- paste0(Formula, " + f(row, model='iid')")
-    }
-  }
-  Data <- cbind(Data, X.effs)
+  X.rep <- do.call("rbind", replicate(ncol(Y), X.effs, simplify = FALSE))
+  attr(X.rep, "formpart") <- attr(X.effs, "formpart")
 
-  if(!is.null(X)) {
-    X.rep <- do.call("rbind", replicate(ncol(Y), X, simplify = FALSE))
-    Data <- cbind(Data, X.rep)
-    Formula <- paste0(Formula, " + ", paste0(colnames(X), collapse=" + "))
-  }
+  # Create data frame of column covariates,
+  #  including (if wanted) column effect, but no intercept
+  W.effs <- FormatCovariateData(X=W, intercept=FALSE, nrows=ncol(Y),
+                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
+                                random = ifelseNULL(ColEff=="random", "column", NULL)
+  )
 
+# replicate the column covariates
+  W.rep <- apply(W.effs, 2, function(x, nn) rep(x, each=nn),
+                 nn=nrow(Y))
+  attr(W.rep, "formpart") <- attr(W.effs, "formpart")
+
+  Data <- cbind(LatentVectors, X.rep, W.rep)
   Data <- as.list(Data)
   Data$Y <- FormatDataFrameForLV(Y)
+  attr(Data, "formpart") <- lapply(list(LatentVectors, X.rep, W.rep), function(X)
+    attr(X, "formpart"))
 
+  Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
   # fit the model
   if(length(Family)==1) Family <- rep(Family, ncol(Data$Y))
   model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)
 
 # Need to add missing species
   ColScores <- AddFixedColScores(model)
-
 
   # If row or column effects are random, extract their values
   # ifelse() does not seem to like returning a NULL, hence this construction

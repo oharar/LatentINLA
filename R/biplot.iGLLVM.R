@@ -36,7 +36,7 @@ biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), 
   if(length(which.lvs)!=2){
     stop("which.lvs must be of length 2.")
   }
-  nLVs <- object$call$nLVs
+  nLVs <- object$nLVs
   lvs <- scores(object, which="sites", type.posterior.stat=type.posterior.stat)
   species <- scores(object,which="species",type.posterior.stat=type.posterior.stat)
   if(!is.null(colnames(object$Y))){

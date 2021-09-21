@@ -48,7 +48,8 @@ FormatCovariateData <- function(X=NULL, intercept=FALSE, AddTerm = NULL,
     addedterm <- NULL
   }
 
-  res <- as.data.frame(cbind(Intercept, X))
+  res <- as.data.frame(X)
+  if(intercept) res$Intercept <- Intercept
   if(!is.null(addedterm) & nrow(res)>0) res[,addname] <- factor(addedterm)
   if(nrow(res)==0) {
     res <- data.frame( addedterm=factor(addedterm))
@@ -61,8 +62,8 @@ FormatCovariateData <- function(X=NULL, intercept=FALSE, AddTerm = NULL,
   if(!is.null(random)) {
     for(i in seq_along(random)) {
       attr(res, "formpart") <-
-        gsub(paste0("+ ", random[i]),
-             paste0("+ f(", random[i], ", model='iid')"),
+        gsub(paste0(random[i]),
+             paste0("f(", random[i], ", model='iid')"),
              attr(res, "formpart"), fixed=TRUE)
 
     }

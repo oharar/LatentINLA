@@ -15,11 +15,11 @@ test_that("FormatCovariateData works correctly", {
   expect_equal(all(X.for$Intercept==1), TRUE)
   expect_equal(all(X.for$thing==1:5), TRUE)
   expect_equal(all(X.for$X2==X[,"X2"]), TRUE)
-  expect_equal(attr(X.for, "formpart"), "Intercept + X1 + X2 + thing - 1")
+  expect_equal(attr(X.for, "formpart"), "X1 + X2 + Intercept + thing - 1")
 
   expect_equal(all(X.for.r$thing==1:5), TRUE)
   expect_equal(all(X.for.r$X2==X[,"X2"]), TRUE)
-  expect_equal(attr(X.for.r, "formpart"), "Intercept + X1 + X2 + f(thing, model='iid') - 1")
+  expect_equal(attr(X.for.r, "formpart"), "X1 + X2 + Intercept + f(thing, model='iid') - 1")
 
   expect_equal(all(X.add$addedterm==letters[1:5]), TRUE)
   expect_equal(all(X.add$X2==X[,"X2"]), TRUE)

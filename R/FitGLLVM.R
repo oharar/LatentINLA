@@ -7,6 +7,8 @@
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
 #' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
+#' @param RowPriorsd Prior standard deviation for latent variable, defaults to 100
+#' @param ColPriorsd Prior standard deviation for column scorse, defaults to 100
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
 #' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
@@ -21,7 +23,8 @@
 
 FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
-                     INLAobj = FALSE,...) {
+                     RowPriorsd=100, ColPriorsd=100,
+                     INLAobj = FALSE, ...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
@@ -43,35 +46,81 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 
   if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
 
-
-  # create LV vectors
+# create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
   LatentVectors <- as.data.frame(LVs)
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs)
+# Priors defined here:
+#"f(lv1.L, model=\"iid\") + f(lv1.col2, copy=\"lv1.L\", hyper = list(beta = list(fixed = FALSE)))
 
 # Create data frame of row covariates,
 #  including intercept and (if wanted) row effect
+
+  if(RowEff!="none") {
+    if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
+    if(is.null(X)) {
+      if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
+      X <- data.frame(row = factor(rownames(Y)))
+    } else {
+      X <- as.data.frame(X)
+      X$row <- factor(rownames(Y))
+    }
+  }
   X.effs <- FormatCovariateData(X=X, intercept=TRUE, nrows=nrow(Y),
-                                AddTerm = ifelseNULL(RowEff=="none", NULL, "row"),
                                 random = ifelseNULL(RowEff=="random", "row", NULL)
   )
+  if(RowEff=="random") {
+    # spot the over-kill
+    r.prior <- paste0("list(prec = list(prior = 'normal', param = c(0, ",
+                      RowPriorsd^-2, ")), initial = 1, fixed = FALSE)")
+    attr(X.effs, "formpart") <-
+    gsub("f(row, model='iid')",
+         paste0("f(row, model='iid', hyper = ", r.prior, ")"),
+         attr(X.effs, "formpart"))
+  }
 
   X.rep <- do.call("rbind", replicate(ncol(Y), X.effs, simplify = FALSE))
   attr(X.rep, "formpart") <- attr(X.effs, "formpart")
+  # Priors defined here:
+#  "Intercept + soil.dry + ... + f(row, model='iid') - 1"
+# Note: row may be fixed or random
 
   # Create data frame of column covariates,
   #  including (if wanted) column effect, but no intercept
+  if(ColEff!="none") {
+    if(is.null(colnames(Y))) colnames(Y) <- 1:ncol(Y)
+    if(is.null(W)) {
+      W <- data.frame(column = factor(colnames(Y)))
+    } else {
+      W <- as.data.frame(W)
+      W$column <- factor(colnames(Y))
+    }
+  }
+
   W.effs <- FormatCovariateData(X=W, intercept=FALSE, nrows=ncol(Y),
-                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
+#                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
                                 random = ifelseNULL(ColEff=="random", "column", NULL)
   )
-
-# replicate the column covariates
-  W.rep <- apply(W.effs, 2, function(x, nn) rep(x, each=nn),
-                 nn=nrow(Y))
+# replicate the column covariates: with 1 column factos become character
+  if(ncol(W.effs)>1) {
+    W.rep <- apply(W.effs, 2, function(x, nn) {
+      rep(x, each=nn)
+      res
+    }, nn=nrow(Y))
+  } else {
+    W.rep <- data.frame(nm = rep(W.effs[,1], each=nrow(Y)))
+    names(W.rep) <- names(W.effs)
+  }
   attr(W.rep, "formpart") <- attr(W.effs, "formpart")
+# Priors defined here:
+#  "column"
+# See also X.rep
 
-  Data <- cbind(LatentVectors, X.rep, W.rep)
+  Data <- LatentVectors
+  if(!is.null(X.rep))   Data <- cbind(Data, X.rep)
+  if(!is.null(W.rep))   Data <- cbind(Data, W.rep)
+
+#  Data <- cbind(LatentVectors, X.rep, W.rep)
   Data <- as.list(Data)
   Data$Y <- FormatDataFrameForLV(Y)
   attr(Data, "formpart") <- lapply(list(LatentVectors, X.rep, W.rep), function(X)
@@ -89,12 +138,12 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   # ifelse() does not seem to like returning a NULL, hence this construction
   RowTerm <- NULL
   ColTerm <- NULL
-  if(exists("row", model$summary.random))
-    RowTerm <- model$summary.random$row
   if(exists("column", model$summary.random))
     ColTerm <- model$summary.random$column
   if(RowEff=="fixed")
     RowTerm <- model$summary.fixed[grep("^row", rownames(model$summary.fixed)),]
+  if(RowEff=="random")
+    RowTerm <- model$summary.random$row
   if(ColEff=="fixed")
     ColTerm <- model$summary.fixed[grep("^column", rownames(model$summary.fixed)),]
 
@@ -106,6 +155,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
     colscores = ColScores,
     roweffs = model$summary.random[grep("\\.L$", names(model$summary.random))],
     formula = Formula,
+    nLVs = nLVs,
     call = match.call(),
     family = table(Family),
     LL = model$mlik[2],

@@ -7,7 +7,7 @@ test_that("FitGLLVM works correctly", {
 
   model.OneLV <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=1)
   model.TwoLVs <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=2,
-                           RowEff = "random")
+                           RowEff = "random", INLAobj = TRUE)
 
   model.X <- FitGLLVM(Y=Y.mat, X=X, nLVs=1)
 
@@ -25,9 +25,9 @@ test_that("FitGLLVM works correctly", {
   #              "nLVs should be small: do you really want 16 of them?")
 
     # Test size
-  expect_equal(length(model.OneLV), 11)
+  expect_equal(length(model.OneLV), 12)
   expect_equal(length(model.OneLV$roweffs), 1)
-  expect_equal(length(model.TwoLVs), 11)
+  expect_equal(length(model.TwoLVs), 13) # + 1 for INLAobj
   expect_equal(length(model.TwoLVs$roweffs), 2)
   expect_equal(nrow(model.OneLV$fixed), 15)
   expect_equal(nrow(model.OneLV$colscores), 5)
@@ -51,7 +51,7 @@ test_that("FitGLLVM works correctly", {
   expect_equal(nrow(model.OneLV$rowterm), 10)
   expect_equal(nrow(model.OneLV$colterm), 4)
 
-  # Check row & col effects: here RowEff is random, so 1 more rowterm
+  # Check row & col effects: here RowEff is random
   expect_equal(nrow(model.TwoLVs$rowterm), 10)
   expect_equal(nrow(model.TwoLVs$colterm), 5)
 

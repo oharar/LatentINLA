@@ -12,6 +12,8 @@ FitGLLVM(
   Family = "gaussian",
   RowEff = "fixed",
   ColEff = "fixed",
+  RowPriorsd = 100,
+  ColPriorsd = 100,
   INLAobj = FALSE,
   ...
 )
@@ -30,6 +32,10 @@ FitGLLVM(
 \item{RowEff}{String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.}
 
 \item{ColEff}{String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.}
+
+\item{RowPriorsd}{Prior standard deviation for latent variable, defaults to 100}
+
+\item{ColPriorsd}{Prior standard deviation for column scorse, defaults to 100}
 
 \item{INLAobj}{Should the full INLA object be included in the output object? Defaults to \code{FALSE}}
 

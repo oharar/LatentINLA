@@ -7,6 +7,7 @@ test_that("Can correctly retrieve all scores", {
   X <- data.frame(x1=rep(1:2, times=5))
 
   model <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=1)
+  model0 <- FitGLLVM(Y=Y.mat, X=NULL)
 
   # Test errors
   expect_error(scores(model,type="whatever"), 'whatever not supported. Must be one of \\{mode,mean\\}.')
@@ -15,5 +16,5 @@ test_that("Can correctly retrieve all scores", {
   expect_equal(dim(scores(model,"species")),c(ncol(model$Y),model$call$nLVs))
   expect_equal(dim(scores(model,"sites")),c(nrow(model$Y),model$call$nLVs))
   expect_equal(length(scores(model)),2)
-
+  expect_equal(length(scores(model0)),2) # This is mainly to check it does not error
 })

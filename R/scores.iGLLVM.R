@@ -27,7 +27,7 @@ scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean", ...){
   if(!type.posterior.stat%in%c("mean","mode")){
     stop(paste(type.posterior.stat, "not supported. Must be one of {mode,mean}."))
   }
-  nLVs <- object$call$nLVs
+  nLVs <- object$nLVs
   if(which=="all"){
     sites <- matrix(unlist(lapply(object$roweffs,function(x,type.posterior.stat)
       x[type.posterior.stat],type.posterior.stat=type.posterior.stat)),ncol=nLVs)

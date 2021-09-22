@@ -46,12 +46,14 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 
   if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
 
+
 # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
   LatentVectors <- as.data.frame(LVs)
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs)
 # Priors defined here:
 #"f(lv1.L, model=\"iid\") + f(lv1.col2, copy=\"lv1.L\", hyper = list(beta = list(fixed = FALSE)))
+
 
 # Create data frame of row covariates,
 #  including intercept and (if wanted) row effect
@@ -76,6 +78,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 #  "Intercept + soil.dry + ... + f(row, model='iid') - 1"
 # Note: row may be fixed or random
 
+
   # Create data frame of column covariates,
   #  including (if wanted) column effect, but no intercept
   if(ColEff!="none") W <- MakeCovDataDataframe(W, t(Y), indname="column")
@@ -84,11 +87,11 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 #                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
                                 random = ifelseNULL(ColEff=="random", "column", NULL)
   )
-# replicate the column covariates: with 1 column factos become character
+# replicate the column covariates: with 1 column factors become character
   if(ncol(W.effs)>1) {
     W.rep <- apply(W.effs, 2, function(x, nn) {
       rep(x, each=nn)
-      res
+#      res
     }, nn=nrow(Y))
   } else {
     W.rep <- data.frame(nm = rep(W.effs[,1], each=nrow(Y)))
@@ -99,22 +102,28 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 #  "column"
 # See also X.rep
 
-  Data <- LatentVectors
-  if(!is.null(X.rep))   Data <- cbind(Data, X.rep)
-  if(!is.null(W.rep))   Data <- cbind(Data, W.rep)
 
-#  Data <- cbind(LatentVectors, X.rep, W.rep)
-  Data <- as.list(Data)
+  # Merge data
+  dfNames <- c("LatentVectors", "X.rep", "W.rep")
+  IsNULL <- sapply(dfNames, function(x) is.null(eval(str2expression(x))))
+  Data <- unlist(do.call(cbind, list(sapply(dfNames[!IsNULL],
+                                     function(x) eval(str2expression(x))))),
+                 recursive=FALSE)
+
+# Add response
+#  Data <- as.list(Data)
   Data$Y <- FormatDataFrameForLV(Y)
-  attr(Data, "formpart") <- lapply(list(LatentVectors, X.rep, W.rep), function(X)
-    attr(X, "formpart"))
+  attr(Data, "formpart") <- lapply(dfNames[!IsNULL], function(X)
+    attr(eval(str2expression(X)), "formpart"))
 
-  Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
+# Write formula
+    Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
   # fit the model
   if(length(Family)==1) Family <- rep(Family, ncol(Data$Y))
+
   model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)
 
-# Need to add missing species
+# Add missing species to colscores
   ColScores <- AddFixedColScores(model)
 
   # If row or column effects are random, extract their values

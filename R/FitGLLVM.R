@@ -56,16 +56,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 # Create data frame of row covariates,
 #  including intercept and (if wanted) row effect
 
-  if(RowEff!="none") {
-    if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
-    if(is.null(X)) {
-      if(is.null(rownames(Y))) rownames(Y) <- 1:nrow(Y)
-      X <- data.frame(row = factor(rownames(Y)))
-    } else {
-      X <- as.data.frame(X)
-      X$row <- factor(rownames(Y))
-    }
-  }
+  if(RowEff!="none")  X <- MakeCovDataDataframe(X, Y)
   X.effs <- FormatCovariateData(X=X, intercept=TRUE, nrows=nrow(Y),
                                 random = ifelseNULL(RowEff=="random", "row", NULL)
   )
@@ -87,15 +78,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 
   # Create data frame of column covariates,
   #  including (if wanted) column effect, but no intercept
-  if(ColEff!="none") {
-    if(is.null(colnames(Y))) colnames(Y) <- 1:ncol(Y)
-    if(is.null(W)) {
-      W <- data.frame(column = factor(colnames(Y)))
-    } else {
-      W <- as.data.frame(W)
-      W$column <- factor(colnames(Y))
-    }
-  }
+  if(ColEff!="none") W <- MakeCovDataDataframe(W, t(Y), indname="column")
 
   W.effs <- FormatCovariateData(X=W, intercept=FALSE, nrows=ncol(Y),
 #                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),

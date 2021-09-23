@@ -8,7 +8,7 @@
 #' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param RowPriorsd Prior standard deviation for latent variable, defaults to 100
-#' @param ColPriorsd Prior standard deviation for column scorse, defaults to 100
+#' @param ColPriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
 #' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
@@ -23,7 +23,7 @@
 
 FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
-                     RowPriorsd=100, ColPriorsd=100,
+                     RowPriorsd=100, ColPriorsd=10,
                      INLAobj = FALSE, ...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -46,14 +46,16 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 
   if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
 
-
 # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
   LatentVectors <- as.data.frame(LVs)
-  attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs)
-# Priors defined here:
-#"f(lv1.L, model=\"iid\") + f(lv1.col2, copy=\"lv1.L\", hyper = list(beta = list(fixed = FALSE)))
-
+  attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs,
+                                                      prior.beta=RowPriorsd)
+# Add prior to beta
+  # attr(LatentVectors, "formpart") <- gsub(
+  #   "beta = list(fixed = FALSE)",
+  #   paste0("beta = list(prior = 'normal', param = c(0, ", RowPriorsd^-2, ", fixed = FALSE))"),
+  #   attr(LatentVectors, "formpart"), fixed = TRUE)
 
 # Create data frame of row covariates,
 #  including intercept and (if wanted) row effect

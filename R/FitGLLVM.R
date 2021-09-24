@@ -9,6 +9,7 @@
 #' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param RowPriorsd Prior standard deviation for latent variable, defaults to 100
 #' @param ColPriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
+#' @param PriorLV Hyperprior for the precision of the latent variable, as a list that INLA will understand (sorry). Defaults to NULL, where the default INLA prior will be used
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
 #' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
@@ -23,7 +24,7 @@
 
 FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
-                     RowPriorsd=100, ColPriorsd=10,
+                     RowPriorsd=100, ColPriorsd=10, PriorLV = NULL,
                      INLAobj = FALSE, ...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -43,20 +44,17 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   if(nLVs<1 ) stop("nLVs should be positive")
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
+  if(!is.null(PriorLV) & !is.list(PriorLV)) stop("PriorLV should be alist or NULL")
 
   if(!ColEff%in%c("none", "fixed", "random")) stop("ColEff must be either none, fixed or random")
 
 # create LV vectors
   LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
   LatentVectors <- as.data.frame(LVs)
+  Hyper <- ifelseNULL(is.null(PriorLV), NULL,deparse(PriorLV))
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs,
-                                                      prior.beta=RowPriorsd)
-# Add prior to beta
-  # attr(LatentVectors, "formpart") <- gsub(
-  #   "beta = list(fixed = FALSE)",
-  #   paste0("beta = list(prior = 'normal', param = c(0, ", RowPriorsd^-2, ", fixed = FALSE))"),
-  #   attr(LatentVectors, "formpart"), fixed = TRUE)
-
+                                                      prior.beta=RowPriorsd,
+                                                      hyperprior.LV=Hyper)
 # Create data frame of row covariates,
 #  including intercept and (if wanted) row effect
 
@@ -66,8 +64,8 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   )
   if(RowEff=="random") {
     # spot the over-kill
-    r.prior <- paste0("list(prec = list(prior = 'normal', param = c(0, ",
-                      RowPriorsd^-2, ")), initial = 1, fixed = FALSE)")
+    r.prior <- paste0("list(prec=list(prior='normal', param=c(0,",
+                      RowPriorsd^-2, ")), initial=1, fixed=FALSE)")
     attr(X.effs, "formpart") <-
     gsub("f(row, model='iid')",
          paste0("f(row, model='iid', hyper = ", r.prior, ")"),
@@ -119,8 +117,9 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
     attr(eval(str2expression(X)), "formpart"))
 
 # Write formula
-    Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
-  # fit the model
+  Formula <- formula(paste0("Y~", paste0(unlist(attr(Data, "formpart")), collapse="+")))
+
+    # fit the model
   if(length(Family)==1) Family <- rep(Family, ncol(Data$Y))
 
   model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)

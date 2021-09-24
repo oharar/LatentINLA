@@ -14,6 +14,7 @@ FitGLLVM(
   ColEff = "fixed",
   RowPriorsd = 100,
   ColPriorsd = 10,
+  PriorLV = NULL,
   INLAobj = FALSE,
   ...
 )
@@ -36,6 +37,8 @@ FitGLLVM(
 \item{RowPriorsd}{Prior standard deviation for latent variable, defaults to 100}
 
 \item{ColPriorsd}{Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10}
+
+\item{PriorLV}{Hyperprior for the precision of the latent variable, as a list that INLA will understand (sorry). Defaults to NULL, where the default INLA prior will be used}
 
 \item{INLAobj}{Should the full INLA object be included in the output object? Defaults to \code{FALSE}}
 

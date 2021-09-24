@@ -9,7 +9,9 @@ test_that("FitGLLVM works correctly", {
   model.TwoLVs <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=2,
                            RowEff = "random", INLAobj = TRUE)
 
-  model.X <- FitGLLVM(Y=Y.mat, X=X, nLVs=1)
+# Also test that PriorLV works
+  model.X <- FitGLLVM(Y=Y.mat, X=X, nLVs=1,
+                      PriorLV = list(prior="pc.prec", param=c(1,0.1)))
 
   # Test errors
   expect_error(FitGLLVM(Y=Y.mat, X=NULL, nLVs=-1),

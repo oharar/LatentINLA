@@ -4,7 +4,12 @@
 \alias{CreateFormulaRHS}
 \title{Create the right hand side of a formula with the specification for the latent variables.}
 \usage{
-CreateFormulaRHS(LVs, constrained = FALSE, prior.beta = 100)
+CreateFormulaRHS(
+  LVs,
+  constrained = FALSE,
+  prior.beta = 100,
+  hyperprior.LV = NULL
+)
 }
 \arguments{
 \item{LVs}{Output from the CreateLVIndices() function}
@@ -12,6 +17,8 @@ CreateFormulaRHS(LVs, constrained = FALSE, prior.beta = 100)
 \item{constrained}{Logical: should the formula be for a constrained model? Defaults to FALSE}
 
 \item{prior.beta}{Prior standard deviation for betas (i.e. column scores). Defaults to 100}
+
+\item{hyperprior.LV}{Hyperparameters for latent variable. Defaults to NULL, otherwise a valid list to be passed to hyper=}
 }
 \value{
 A formula

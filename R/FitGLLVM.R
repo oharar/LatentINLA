@@ -7,12 +7,19 @@
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
 #' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
-#' @param RowPriorsd Prior standard deviation for latent variable, defaults to 100
-#' @param ColPriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
+#' @param RowEffPriorsd Prior standard deviation for latent variable, defaults to 100
+#' @param ColEffPriorsd Prior standard deviation for latent variable, defaults to 100
+#' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param PriorLV Hyperprior for the precision of the latent variable, as a list that INLA will understand (sorry). Defaults to NULL, where the default INLA prior will be used
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
-#' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
+#' @details This fits a GLLVM....
+#'
+#' Priors for fixed effects can be passed straight to INLA with code like \code{control.fixed = list(mean = ..., prec = ...)}
+#'
+#' The column effects have to be fixed effects: if you want them to be random, you have to have fixed rows.
+#' You can just transpose the matrix to get this model.
+#' @return A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family.
 #' the posterior summaries for the fixed effects, row main effects, the column main effect, the column scores and the row
 #' effects respectively. rowterm and colterm may be NULL if they were  not set to be random.
 
@@ -24,7 +31,8 @@
 
 FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
-                     RowPriorsd=100, ColPriorsd=10, PriorLV = NULL,
+                     RowEffPriorsd=100, ColEffPriorsd=100,
+                     ColScorePriorsd=10, PriorLV = NULL,
                      INLAobj = FALSE, ...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -53,8 +61,19 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   LatentVectors <- as.data.frame(LVs)
   Hyper <- ifelseNULL(is.null(PriorLV), NULL,deparse(PriorLV))
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs,
-                                                      prior.beta=RowPriorsd,
+                                                      prior.beta=ColScorePriorsd,
                                                       hyperprior.LV=Hyper)
+# Priors:
+#  beta: must be fixed DONE
+#  LV: must be random DONE
+
+#  X covariates: fixed
+#  X row effect: random or fixed.
+
+#  W covariates: fixed
+#  W column effect: random or fixed.
+
+
 # Create data frames of row & column covariates,
 #  including intercept and (if wanted) row/column effect effect
 # we need to do this first to get the X:column and W:row interactions
@@ -68,7 +87,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   if(RowEff=="random") {
     # spot the over-kill
     r.prior <- paste0("list(prec=list(prior='normal', param=c(0,",
-                      RowPriorsd^-2, ")), initial=1, fixed=FALSE)")
+                      RowEffPriorsd^-2, ")), initial=1, fixed=FALSE)")
     attr(X.effs, "formpart") <-
     gsub("f(row, model='iid')",
          paste0("f(row, model='iid', hyper = ", r.prior, ")"),
@@ -85,6 +104,16 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 #                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
                                 random = ifelseNULL(ColEff=="random", "column", NULL)
   )
+  if(ColEff=="random") {
+    # spot the over-kill
+    c.prior <- paste0("list(prec=list(prior='normal', param=c(0,",
+                      ColEffPriorsd^-2, ")), initial=1, fixed=FALSE)")
+    attr(W.effs, "formpart") <-
+      gsub("f(column, model='iid')",
+           paste0("f(column, model='iid', hyper = ", c.prior, ")"),
+           attr(W.effs, "formpart"))
+  }
+
 # replicate the column covariates: with 1 column factors become character
   if(ncol(W.effs)>1) {
     W.rep <- apply(W.effs, 2, function(x, nn) {
@@ -99,7 +128,6 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 # Priors defined here:
 #  "column"
 # See also X.rep
-
 
   # Merge data
   dfNames <- c("LatentVectors", "X.rep", "W.rep")

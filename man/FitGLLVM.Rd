@@ -12,8 +12,9 @@ FitGLLVM(
   Family = "gaussian",
   RowEff = "fixed",
   ColEff = "fixed",
-  RowPriorsd = 100,
-  ColPriorsd = 10,
+  RowEffPriorsd = 100,
+  ColEffPriorsd = 100,
+  ColScorePriorsd = 10,
   PriorLV = NULL,
   INLAobj = FALSE,
   ...
@@ -34,9 +35,11 @@ FitGLLVM(
 
 \item{ColEff}{String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.}
 
-\item{RowPriorsd}{Prior standard deviation for latent variable, defaults to 100}
+\item{RowEffPriorsd}{Prior standard deviation for latent variable, defaults to 100}
 
-\item{ColPriorsd}{Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10}
+\item{ColEffPriorsd}{Prior standard deviation for latent variable, defaults to 100}
+
+\item{ColScorePriorsd}{Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10}
 
 \item{PriorLV}{Hyperprior for the precision of the latent variable, as a list that INLA will understand (sorry). Defaults to NULL, where the default INLA prior will be used}
 
@@ -45,12 +48,20 @@ FitGLLVM(
 \item{...}{More arguments to be passed to \code{inla()}}
 }
 \value{
-A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family..
+A list with fixed, rowterm, colterm, colscores, and roweffs, formula, Y, X, family.
 the posterior summaries for the fixed effects, row main effects, the column main effect, the column scores and the row
 effects respectively. rowterm and colterm may be NULL if they were  not set to be random.
 }
 \description{
 Fits a GLLVM to data
+}
+\details{
+This fits a GLLVM....
+
+Priors for fixed effects can be passed straight to INLA with code like \code{control.fixed = list(mean = ..., prec = ...)}
+
+The column effects have to be fixed effects: if you want them to be random, you have to have fixed rows.
+You can just transpose the matrix to get this model.
 }
 \examples{
 FitGLLVM(matrix(1:10, ncol=5), nLVs=1, Family="poisson")

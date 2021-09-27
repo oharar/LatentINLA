@@ -29,11 +29,11 @@ useSpecies <- 1:22
 Y <- forminifera$comm[useSite, useSpecies]
 ```
 
-We will use 2 latent variables. First we fit the model (of course)
+We will use 2 latent variables. First we fit the model (of course). We will ignoer the warnings this produces.
 
-```{r FormatModelNoCov, eval=TRUE}
+```{r FormatModelNoCov, eval=TRUE, warning=FALSE}
 formin <- FitGLLVM(Y=Y, Family="poisson", nLVs = 2, 
-                   RowEff = "random", ColEff = "random", ColPriorsd=1)
+                   RowEff = "random", ColEff = "random", ColScorePriorsd=1)
 
 ```
 
@@ -77,13 +77,13 @@ From this we can conclude that some species are rarer than others.
 
 Now we can add some environmental covariates.
 
-```{r FitWithCovariates, eval=TRUE}
+```{r FitWithCovariates, eval=TRUE, warning=FALSE}
 X <- apply(forminifera$envir[useSite, 1:3], 2, scale)
 forminCov <- FitGLLVM(Y=Y, 
                       X=X, 
 #                   W=forminifera$traits[useSpecies, ],
                    Family="poisson", nLVs = 2, 
-                   RowEff = "random", ColEff = "fixed", ColPriorsd=1)
+                   RowEff = "random", ColEff = "fixed", ColEffPriorsd=1)
 
 ```
 

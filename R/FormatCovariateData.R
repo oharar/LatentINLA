@@ -3,7 +3,8 @@
 #' @param X Covariate data
 #' @param intercept Logical, should an explicit intercept be added?
 #' @param AddTerm Term to be added, either a name or a character vector of same length as X. If a single name, the values will be 1:nrow(result)
-#' @param nrows Number of rows in the result. This ges superceded by anything else (i.e. X or AddTerm) defining the number of rows. Defaults to NULL.
+#' @param intname Name of interaction covariate (e.g. if X is supplied, X:column). Defaults to NULL
+#' @param nrows Number of rows in the result. This gets superceded by anything else (i.e. X or AddTerm) defining the number of rows. Defaults to NULL.
 #' @param random Vector of names of variables to be made random effects. NULL (the default) if none.
 #' @return A data frame with X, an intercept and added term, if desires, and with an attribute that is the part of the formula needed in the model
 #' @examples
@@ -11,6 +12,7 @@
 #' @export
 
 FormatCovariateData <- function(X=NULL, intercept=FALSE, AddTerm = NULL,
+                                intname = NULL,
                                 nrows=NULL, random=NULL) {
 
   # Create name for AddTerm
@@ -56,7 +58,19 @@ FormatCovariateData <- function(X=NULL, intercept=FALSE, AddTerm = NULL,
   }
   if(length(AddTerm)==1) colnames(res)[colnames(res)=="addedterm"] <- AddTerm
 
-  attr(res, "formpart") <- paste0(names(res), collapse=" + ")
+# Crate interaction terms, if needed
+  NoIntNames <- c("row", "Intercept", "column",
+                  ifelseNULL(length(AddTerm)==1, AddTerm, NULL))
+  NoInteraction <- names(res)%in%NoIntNames
+  if(!is.null(intname) & !all(NoInteraction)) {
+    IntForm <- paste0("(", paste0(names(res)[!NoInteraction], collapse=" + "),
+                      ")*", intname)
+    ToFormula <- c(names(res)[NoInteraction], IntForm)
+  } else {
+    ToFormula <- names(res)
+  }
+
+  attr(res, "formpart") <- paste0(ToFormula, collapse=" + ")
   if(intercept)  attr(res, "formpart") <- paste0(attr(res, "formpart"), " - 1")
 
   if(!is.null(random)) {

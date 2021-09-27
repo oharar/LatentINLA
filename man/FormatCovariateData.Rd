@@ -8,6 +8,7 @@ FormatCovariateData(
   X = NULL,
   intercept = FALSE,
   AddTerm = NULL,
+  intname = NULL,
   nrows = NULL,
   random = NULL
 )
@@ -19,7 +20,9 @@ FormatCovariateData(
 
 \item{AddTerm}{Term to be added, either a name or a character vector of same length as X. If a single name, the values will be 1:nrow(result)}
 
-\item{nrows}{Number of rows in the result. This ges superceded by anything else (i.e. X or AddTerm) defining the number of rows. Defaults to NULL.}
+\item{intname}{Name of interaction covariate (e.g. if X is supplied, X:column). Defaults to NULL}
+
+\item{nrows}{Number of rows in the result. This gets superceded by anything else (i.e. X or AddTerm) defining the number of rows. Defaults to NULL.}
 
 \item{random}{Vector of names of variables to be made random effects. NULL (the default) if none.}
 }

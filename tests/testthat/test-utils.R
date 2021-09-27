@@ -1,8 +1,8 @@
 
 test_that("UnSparseMartix works correctly", {
   #  skip_on_cran()
-  Y <- 1:50
-  Y.mat <- matrix(Y, ncol=5)
+  Yusm <- 1:50
+  Y.mat <- matrix(Yusm, ncol=5)
   Reps <- 5
   SparseX <- do.call(Matrix::bdiag, replicate(Reps, Y.mat, simplify=FALSE))
 
@@ -21,16 +21,16 @@ test_that("AddFixedColScores works correctly", {
   #  skip_on_cran()
   Y.v <- 1:50
   Ncol <- 5
-  Y <- matrix(Y.v, ncol=Ncol)
-  nLVs <- 1
+  Yafcs <- matrix(Y.v, ncol=Ncol)
+  nLVsafcs <- 1
   Family="gaussian"
 
-  LVs <- MakeLVsFromDataFrame(Y, nLVs = nLVs)
-  LatentVectors <- as.data.frame(LVs)
-  attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs)
+  LVsafcs <- MakeLVsFromDataFrame(Yafcs, nLVs = nLVsafcs)
+  LatentVectors <- as.data.frame(LVsafcs)
+  attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVsafcs)
 
   Data <- as.list(LatentVectors)
-  Data$Y <- FormatDataFrameForLV(Y)
+  Data$Y <- FormatDataFrameForLV(Yafcs)
   attr(Data, "formpart") <- attr(LatentVectors, "formpart")
 
   Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
@@ -63,25 +63,25 @@ test_that("ifelseNULL works correctly", {
 
 test_that("MakeCovDataDataframe works correctly", {
   #  skip_on_cran()
-  Y <- 1:50
-  Y.mat <- matrix(Y, ncol=5)
+  Ymcddf <- 1:50
+  Y.mat <- matrix(Ymcddf, ncol=5)
   Y.mat2 <- Y.mat
   rownames(Y.mat2) <- letters[1:nrow(Y.mat2)]
-  X <- data.frame(x1=rep(1:2, times=5), x2=rep(1:2, each=5))
+  Xmcddf <- data.frame(x1=rep(1:2, times=5), x2=rep(1:2, each=5))
 
-  res1 <- MakeCovDataDataframe(X, Y.mat)
-  res2 <- MakeCovDataDataframe(X, Y.mat2, indname="thing")
+  res1 <- MakeCovDataDataframe(Xmcddf, Y.mat)
+  res2 <- MakeCovDataDataframe(Xmcddf, Y.mat2, indname="thing")
   res3 <- MakeCovDataDataframe(NULL, Y.mat2, indname="thing")
 
   # Test size
   expect_equal(nrow(res1), nrow(Y.mat))
-  expect_equal(ncol(res1), ncol(X)+1)
-  expect_equal(colnames(res1), c(colnames(X), "row"))
+  expect_equal(ncol(res1), ncol(Xmcddf)+1)
+  expect_equal(colnames(res1), c(colnames(Xmcddf), "row"))
   expect_equal(all(res1$row%in%1:nrow(Y.mat)), TRUE)
 
   expect_equal(nrow(res2), nrow(Y.mat))
-  expect_equal(ncol(res2), ncol(X)+1)
-  expect_equal(colnames(res2), c(colnames(X), "thing"))
+  expect_equal(ncol(res2), ncol(Xmcddf)+1)
+  expect_equal(colnames(res2), c(colnames(Xmcddf), "thing"))
 
   expect_equal(nrow(res3), nrow(Y.mat))
   expect_equal(ncol(res3), 1)

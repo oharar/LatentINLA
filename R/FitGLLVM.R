@@ -55,11 +55,14 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs,
                                                       prior.beta=RowPriorsd,
                                                       hyperprior.LV=Hyper)
-# Create data frame of row covariates,
-#  including intercept and (if wanted) row effect
+# Create data frames of row & column covariates,
+#  including intercept and (if wanted) row/column effect effect
+# we need to do this first to get the X:column and W:row interactions
+  XisNULL <- is.null(X) # test before we change X
+  if(RowEff!="none" | !is.null(W))  X <- MakeCovDataDataframe(X, Y)
+  if(ColEff!="none" | !XisNULL) W <- MakeCovDataDataframe(W, t(Y), indname="column")
 
-  if(RowEff!="none")  X <- MakeCovDataDataframe(X, Y)
-  X.effs <- FormatCovariateData(X=X, intercept=TRUE, nrows=nrow(Y),
+  X.effs <- FormatCovariateData(X=X, intercept=TRUE, nrows=nrow(Y), intname = "column",
                                 random = ifelseNULL(RowEff=="random", "row", NULL)
   )
   if(RowEff=="random") {
@@ -78,12 +81,7 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
 #  "Intercept + soil.dry + ... + f(row, model='iid') - 1"
 # Note: row may be fixed or random
 
-
-  # Create data frame of column covariates,
-  #  including (if wanted) column effect, but no intercept
-  if(ColEff!="none") W <- MakeCovDataDataframe(W, t(Y), indname="column")
-
-  W.effs <- FormatCovariateData(X=W, intercept=FALSE, nrows=ncol(Y),
+  W.effs <- FormatCovariateData(X=W, intercept=FALSE, nrows=ncol(Y), intname = "row",
 #                                AddTerm = ifelseNULL(ColEff=="none", NULL, "column"),
                                 random = ifelseNULL(ColEff=="random", "column", NULL)
   )

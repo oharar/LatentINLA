@@ -1,16 +1,16 @@
 
 test_that("FitGLLVM works correctly", {
   #  skip_on_cran()
-  Y <- 1:50
-  Y.mat <- matrix(Y, ncol=5)
-  X <- data.frame(x1=rep(1:2, times=5))
+  Yfg <- 1:50
+  Y.mat <- matrix(Yfg, ncol=5)
+  Xfg <- data.frame(x1=rep(1:2, times=5))
 
   model.OneLV <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=1)
   model.TwoLVs <- FitGLLVM(Y=Y.mat, X=NULL, nLVs=2,
                            RowEff = "random", INLAobj = TRUE)
 
 # Also test that PriorLV works
-  model.X <- FitGLLVM(Y=Y.mat, X=X, nLVs=1,
+  model.X <- FitGLLVM(Y=Y.mat, X=Xfg, nLVs=1,
                       PriorLV = list(prior="pc.prec", param=c(1,0.1)))
 
   # Test errors
@@ -38,7 +38,7 @@ test_that("FitGLLVM works correctly", {
   expect_equal(nrow(model.TwoLVs$roweffs[[2]]), 10)
   expect_equal(class(model.TwoLVs), "iGLLVM")
 
-  expect_equal(nrow(model.X$fixed), 16)
+  expect_equal(nrow(model.X$fixed), 20)
 
 # Test values
 # These are currently not implemented

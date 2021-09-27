@@ -45,7 +45,6 @@ ifelseNULL <- function(test, yes, no) {
 MakeCovDataDataframe <- function(x, y, indname="row") {
   if(is.null(rownames(y))) rownames(y) <- 1:nrow(y)
   if(is.null(x)) {
-    if(is.null(rownames(y))) rownames(y) <- 1:nrow(y)
     x <- data.frame(row = factor(rownames(y)))
   } else {
     x <- as.data.frame(x)

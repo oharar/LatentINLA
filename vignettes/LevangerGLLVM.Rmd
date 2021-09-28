@@ -1,8 +1,8 @@
 ---
-title: "Forminifera GLLVM"
+title: "Levanger GLLVM"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Forminifera GLLVM}
+  %\VignetteIndexEntry{Levanger GLLVM}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -81,12 +81,6 @@ LevCov <- FitGLLVM(Y=Y,
 
 ```
 
-Whic also give us a boplot:
-
-```{r BiplotCov, eval=TRUE, fig.height=5, fig.width=6}
-biplot(forminCov)
-
-```
 
 But we can also see the effects of the covariates on each species:
 

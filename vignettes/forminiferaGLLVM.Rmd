@@ -122,3 +122,18 @@ mtext("Species", 2, line =5)
 ```
 
 Overall, sp22 is weird.
+
+## A Constrained Model (if it works)
+
+Now we can add some environmental covariates.
+
+```{r FitConstrained, eval=FALSE, warning=FALSE}
+X <- apply(forminifera$envir[useSite, 1:3], 2, scale)
+forminCov <- FitConstrainedGLLVM(Y=Y, 
+                      X=X, 
+#                   W=forminifera$traits[useSpecies, ],
+                   Family="poisson", nLVs = 2)
+ 
+#                   RowEff = "random", ColEff = "fixed", ColEffPriorsd=1)
+
+```

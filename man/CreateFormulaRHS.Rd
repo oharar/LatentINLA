@@ -8,7 +8,8 @@ CreateFormulaRHS(
   LVs,
   constrained = FALSE,
   prior.beta = 100,
-  hyperprior.LV = NULL
+  hyperprior.LV = NULL,
+  init.beta = 0.1
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ CreateFormulaRHS(
 \item{prior.beta}{Prior standard deviation for betas (i.e. column scores). Defaults to 100}
 
 \item{hyperprior.LV}{Hyperparameters for latent variable. Defaults to NULL, otherwise a valid list to be passed to hyper=}
+
+\item{init.beta}{Initial value for betas (i.e. column scores). Defaults to 0.1: cannot be 0 or INLA will complain}
 }
 \value{
 A formula

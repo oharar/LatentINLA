@@ -3,6 +3,7 @@
 #' @param LVs Output from the CreateLVIndices() function
 #' @param constrained Logical: should the formula be for a constrained model? Defaults to FALSE
 #' @param prior.beta Prior standard deviation for betas (i.e. column scores). Defaults to 100
+#' @param init.beta Initial value for betas (i.e. column scores). Defaults to 0.1: cannot be 0 or INLA will complain
 #' @param hyperprior.LV Hyperparameters for latent variable. Defaults to NULL, otherwise a valid list to be passed to hyper=
 #' @return A formula
 #' @details
@@ -11,9 +12,13 @@
 #' CreateFormulaRHS(CreateLVIndices(matrix(1:10, ncol=5)))
 #' @export
 
-CreateFormulaRHS <- function(LVs, constrained=FALSE, prior.beta=100, hyperprior.LV=NULL) {
+CreateFormulaRHS <- function(LVs, constrained=FALSE, prior.beta=100, hyperprior.LV=NULL, init.beta=0.1) {
+  if(!length(init.beta)%in%c(1, 2)) stop("init.beta should be either a single value, two values, or a list of length 2")
+  if(is.list(init.beta)) {
+    if(lapply(init.beta, length)!=lapply(LVs, length)) stop("the vectors in init.beta of wrong length")
+  }
 
-  if(constrained) {
+    if(constrained) {
     Copies <- sapply(names(LVs), function(nm, lvs) {
       LV <- lvs[[nm]]
       Copies <- c(

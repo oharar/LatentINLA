@@ -114,3 +114,17 @@ test_that("MakeIDs works correctly", {
   expect_equal(ID2[(11+nrow(X)):(20+nrow(X))], as.integer(rep(NA, nrow(X))))
 
 })
+
+test_that("MakePrecPrior works correctly", {
+
+  MPP1 <- MakePrecPrior(dist = 'help', pars = c(0.01, 0.01), init = 4)
+
+  #  skip_on_cran()
+  # Test Trivial Stuff
+  expect_equal(is.list(MPP1), TRUE)
+  expect_equal(MPP1$prec$prior, "help")
+  expect_equal(MPP1$prec$param, c(0.01, 0.01))
+  expect_equal(MPP1$initial, 4)
+  expect_equal(MPP1$fixed, FALSE)
+
+})

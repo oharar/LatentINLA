@@ -63,4 +63,10 @@ MakeIDs <- function(wh, df) {
 }
 
 
+# Function to write a precision prior
+MakePrecPrior <- function(dist = 'loggamma', pars = c(0.01, 0.01), init = 4) {
+  res <- list(prec=list(prior = dist, param = pars),
+              initial = init, fixed = FALSE)
+  res
+}
 

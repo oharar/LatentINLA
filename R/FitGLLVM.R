@@ -7,8 +7,8 @@
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data. For supported distributions see names(inla.models()$likelihood).
 #' @param RowEff String indicating what sort of row effect is required. Either none, fixed or random. Defaults to fixed.
 #' @param ColEff String indicating what sort of column effect is required. Either none, fixed or random. Defaults to fixed.
-#' @param RowPriorsd Prior standard deviation for latent variable, defaults to 100
-#' @param ColPriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
+#' @param RowEffPriorsd Prior standard deviation for latent variable, defaults to 100
+#' @param ColEffPriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param PriorLV Hyperprior for the precision of the latent variable, as a list that INLA will understand (sorry). Defaults to NULL, where the default INLA prior will be used
 #' @param INLAobj Should the full INLA object be included in the output object? Defaults to \code{FALSE}
 #' @param ... More arguments to be passed to \code{inla()}
@@ -24,7 +24,7 @@
 
 FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
                      RowEff = "fixed", ColEff = "fixed",
-                     RowPriorsd=100, ColPriorsd=10, PriorLV = NULL,
+                     RowEffPriorsd=100, ColEffPriorsd=10, PriorLV = NULL,
                      INLAobj = FALSE, ...) {
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -53,8 +53,11 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   LatentVectors <- as.data.frame(LVs)
   Hyper <- ifelseNULL(is.null(PriorLV), NULL,deparse(PriorLV))
   attr(LatentVectors, "formpart") <- CreateFormulaRHS(LVs=LVs,
-                                                      prior.beta=RowPriorsd,
+                                                      prior.beta=ColEffPriorsd,
                                                       hyperprior.LV=Hyper)
+
+
+
 # Create data frames of row & column covariates,
 #  including intercept and (if wanted) row/column effect effect
 # we need to do this first to get the X:column and W:row interactions
@@ -67,8 +70,8 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
   )
   if(RowEff=="random") {
     # spot the over-kill
-    r.prior <- paste0("list(prec=list(prior='normal', param=c(0,",
-                      RowPriorsd^-2, ")), initial=1, fixed=FALSE)")
+    r.prior <- list(prec=list(prior = 'loggamma', param = c(0.01, 0.01)),
+  initial = 4, fixed = FALSE)
     attr(X.effs, "formpart") <-
     gsub("f(row, model='iid')",
          paste0("f(row, model='iid', hyper = ", r.prior, ")"),

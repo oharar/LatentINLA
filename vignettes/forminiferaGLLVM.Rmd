@@ -33,7 +33,7 @@ We will use 2 latent variables. First we fit the model (of course)
 
 ```{r FormatModelNoCov, eval=TRUE}
 formin <- FitGLLVM(Y=Y, Family="poisson", nLVs = 2, 
-                   RowEff = "random", ColEff = "random", ColPriorsd=1)
+                   RowEff = "random", ColEff = "random", ColEffPriorsd=1)
 
 ```
 
@@ -83,7 +83,7 @@ forminCov <- FitGLLVM(Y=Y,
                       X=X, 
 #                   W=forminifera$traits[useSpecies, ],
                    Family="poisson", nLVs = 2, 
-                   RowEff = "random", ColEff = "fixed", ColPriorsd=1)
+                   RowEff = "random", ColEff = "fixed", ColEffPriorsd=1)
 
 ```
 

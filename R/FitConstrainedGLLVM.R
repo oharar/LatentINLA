@@ -49,7 +49,6 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   if(nLVs<1 ) stop("nLVs should be positive")
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
-
   if(nLVs>1) warning("This might not work yet: INLA may crash.")
 
 
@@ -84,20 +83,8 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   dataLVs <- cbind(Y, L=matrix(0, ncol=nLVs, nrow = nrow(Y),
                                dimnames = list(NULL, paste0("L", 1:nLVs))))
 
-  LV1 <- MakeLVsFromDataFrame(dat=dataLVs, nLVs=nLVs)
-  LVs <- sapply(1:length(LV1), function(l, lvs, nm) {
-    lv <- lvs[[l]][,-1]
-    names(lv) <- nm[(1+l):length(nm)]
-    Keep <- !grepl("L", names(lv)) | grepl(paste0("L", l), names(lv))
-
-    # Fix names to be consistent
-    lv <- lv[,Keep]
-    colnames(lv) <- paste(colnames(lv), l, sep=".")
-    lv
-  }, lvs=LV1, nm=colnames(dataLVs))
-
-  if(nLVs==1) LVs <- as.data.frame(LVs)
-  names(LVs) <- names(LV1)
+  LVs <- MakeLVsFromDataFrame(dat=dataLVs, nLVs=nLVs)
+  LatentVectors <- as.data.frame(LVs)
 
   # lapply(LVs, function(df) apply(df, 2, function(x) which(!is.na(x))[1]))
 
@@ -107,7 +94,7 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   # Repeat X for each latent variable
   # eps is the unexplained variation in each LV
   CovariateNames <- colnames(X)
-  X.eps <- cbind(X, eps=1:nrow(X))
+  X.eps <- as.matrix(cbind(X, eps=1:nrow(X)))
   XToCov <- do.call(Matrix::bdiag, replicate(nLVs, X.eps, simplify=FALSE))
 
   DatToCov <- list(XToCov,
@@ -134,13 +121,13 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   # Covariates, latent variable indices, weights, responses
   if(nLVs==1) {
     Data <- cbind(data.frame(Cov.dat),
-                  data.frame(LVs[[1]]),
+                  data.frame(LatentVectors[[1]]),
                   w)
     colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
     colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
   } else {
     Data <- cbind(Cov.dat,
-                  data.frame(LVs),
+                  data.frame(LatentVectors),
                   w)
   }
   Data$Y <- dat
@@ -161,7 +148,7 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   if(length(Family)==1) Family.Y <- rep(Family, ncol(Y))
   Fam <- c(Family.Y, rep("gaussian", nLVs))
 
-  model <- INLA::inla(Formula, data=Data, family = Fam, ...)
+  model <- INLA::inla(Formula, data=Data, family = Fam)
   #  model <- INLA::inla(Formula, data=Data, family = Fam)
 
   # Need to add missing species to output

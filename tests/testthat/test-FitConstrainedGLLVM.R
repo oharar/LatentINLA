@@ -36,11 +36,11 @@ test_that("FitConstrainedGLLVM works correctly", {
 #     # Test size
   expect_equal(length(model.X), 9)
 #  expect_equal(length(model.X$roweffs), 1)
-  expect_equal(nrow(model.X$fixed), 3)
-  expect_equal(nrow(model.X$colscores), 20)
+  expect_equal(nrow(model.X$fixed), 5)
+  expect_equal(nrow(model.X$colscores), 24)
 #  expect_equal(nrow(model.X$roweffs[[1]]), 10)
 
-  expect_equal(nrow(model.X$fixed), 3)
+  expect_equal(nrow(model.X$fixed), 5)
   expect_equal(class(model.X), "iGLLVM")
 
 # Test values

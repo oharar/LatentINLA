@@ -13,7 +13,8 @@ FitConstrainedGLLVM(Y, X, nLVs = 1, Family = "gaussian", INLAobj = FALSE, ...)
 
 \item{nLVs}{The number of latent variables required}
 
-\item{Family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.}
+\item{Family}{A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
+#' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10}
 
 \item{INLAobj}{Should the full INLA object be included in the output object?
 Defaults to FALSE}

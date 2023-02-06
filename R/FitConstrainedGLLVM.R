@@ -3,8 +3,8 @@
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
 #' @param X A data frame or matrix of covariates (not used yet)
 #' @param nLVs The number of latent variables required
-#' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
+#' #' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param INLAobj Should the full INLA object be included in the output object?
 #' Defaults to FALSE
 #' @param ... More arguments to be passed to inla()

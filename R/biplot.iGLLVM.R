@@ -27,7 +27,7 @@
 
 biplot.iGLLVM <- function(object,type.posterior.stat="mean",which.lvs = c(1,2), alpha = 0.5, site.labels = F, site.col = "black", site.cex = 1, site.pch = 1, spp.col="blue", spp.cex = 1, ...){
   #scaling code used from https://github.com/JenniNiku/gllvm/blob/master/R/ordiplot.gllvm.R
-  if(class(object)!="iGLLVM"){
+  if(!inherits(object,"iGLLVM")){
     stop("Object needs to be of class iGLLVM.")
   }
   if(!type.posterior.stat%in%c("mean","mode")){

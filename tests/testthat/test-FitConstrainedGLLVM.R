@@ -2,18 +2,23 @@
 test_that("FitConstrainedGLLVM works correctly", {
   #  skip_on_cran()
   set.seed(2021)
-  NRows <- 20;   nLVs <- 1;  NCol <- 20;  NCovs <- 2
-  Intercept <- 2;  CovBeta <- c(-0.2, 0.7)
-  ColEffs <- matrix(c(1,rnorm(nLVs*(NCol-1), 0, 0.5)), ncol=NCol)
-  X <- matrix(10+1:(NCovs*NRows), nrow=NRows,
-              dimnames = list(NULL, paste0("X", 1:NCovs)))
-
-  E.Y <- rowSums(apply(X, 2, scale)%*%CovBeta)%*%ColEffs
-  Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
+  NRows <- 20;   nLVs <- 2;  NCol <- 10;  NCovs <- 2
+  Intercept <- 2;  CovBeta <- matrix(c(-0.2, 0.7,0.5,2),ncol=nLVs)
+  intercepts <- runif(NCol, -1,1)
+  X <- matrix(rnorm(NCovs*NRows),nrow=NRows)
+  ColEffs <- matrix(runif(nLVs*NCol, -1, 1), ncol=NCol)
+  ColEffs[lower.tri(ColEffs)] <- 0
+  diag(ColEffs) <- 1
+  e <- matrix(rnorm(NRows*nLVs),ncol=nLVs)
+  E.Y <- matrix(intercepts,ncol=NCol,nrow=NRows,byrow=T)+(apply(X, 2, scale)%*%CovBeta + e)%*%ColEffs
+  Y.mat <-rpois(NCol*NRows,exp(E.Y))
+  Y.mat <- matrix(Y.mat,ncol=NCol,nrow=NRows)
   colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
+  colnames(X)<-c("one","two")
 
-  model.X <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=2, Family="poisson")
-  model.X1 <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=1, Family="poisson")#just here because it should be tested as a special case
+
+  model.X <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=2, Family="poisson",control.inla=list(control.vb=list(emergency=...)))
+  model.X1 <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=1, Family="gaussian")#just here because it should be tested as a special case
 
   # Test errors
   expect_error(FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=-1),

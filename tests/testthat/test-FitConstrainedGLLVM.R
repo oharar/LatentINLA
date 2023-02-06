@@ -17,7 +17,7 @@ test_that("FitConstrainedGLLVM works correctly", {
   colnames(X)<-c("one","two")
 
 
-  model.X <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=2, Family="poisson",control.inla=list(control.vb=list(emergency=...)))
+  model.X <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=2, Family="poisson",control.inla=list(control.vb=list(emergency=30)))
   model.X1 <- FitConstrainedGLLVM(Y=Y.mat, X=X, nLVs=1, Family="gaussian")#just here because it should be tested as a special case
 
   # Test errors

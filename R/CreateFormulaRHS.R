@@ -21,7 +21,7 @@ CreateFormulaRHS <- function(LVs, constrained=FALSE, prior.beta=100, hyperprior.
                ", w.", nm, ", model='iid', hyper = list(prec = list(initial = -6, fixed=TRUE)))"),
         paste0("f(", nm, ".", names(LV)[!grepl("^L", names(LV))],
                ", copy='", nm, ".", names(LV)[grep("^L", names(LV))],
-               "', hyper = list(beta = list(param=c(0,0.01), initial=0, fixed = FALSE)))",
+               "', hyper = list(beta = list(param=c(0,", prior.beta^-2, "), initial=0, fixed = FALSE)))",
                collapse = " + ")
       )
     }, lvs=LVs)

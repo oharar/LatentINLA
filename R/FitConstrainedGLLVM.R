@@ -119,17 +119,17 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
 
   # Merge all of the data together
   # Covariates, latent variable indices, weights, responses
-  if(nLVs==1) {
-    Data <- cbind(data.frame(Cov.dat),
-                  data.frame(LatentVectors[[1]]),
-                  w)
-    colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
-    colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
-  } else {
+  # if(nLVs==1) {
+  #   Data <- cbind(data.frame(Cov.dat),
+  #                 data.frame(LatentVectors[[1]]),
+  #                 w)
+  #   colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
+  #   colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
+  # } else {
     Data <- cbind(Cov.dat,
                   data.frame(LatentVectors),
                   w)
-  }
+  # }
   Data$Y <- dat
 
   #########################

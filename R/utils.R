@@ -33,6 +33,25 @@ AddFixedColScores <- function(mod) {
   ColScores
 }
 
+AddFixedPredEffs <- function(mod) {
+  CS.tmp <- mod$summary.fixed[-1,]# remove intercept
+
+  CS.tmp$LV <- as.integer(gsub('.*.lv(.*)','\\1',row.names(CS.tmp)))
+  predNames <- gsub(".lv([0-9]+).*$","",row.names(CS.tmp))
+  CS.tmp$Preds <- as.integer(factor(predNames,levels=unique(predNames)))
+
+  AllLevels <- expand.grid(Preds=unique(CS.tmp$Preds), LV=1:max(CS.tmp$LV))
+
+  PredEffs <- merge(CS.tmp, AllLevels, all=TRUE)
+
+  PredEffs[is.na(PredEffs$mean), c("mean", "mode")] <- 0
+  PredEffs$sd[is.na(PredEffs$sd)] <- 0
+
+  rownames(PredEffs) <- paste0(rep(unique(predNames),times=length(unique(CS.tmp$LV))),".lv",rep(1:length(unique(CS.tmp$LV)),each=length(unique(predNames))))
+  PredEffs[,c("LV", "Col")] <- NULL
+
+  rbind(mod$summary.fixed[1,], PredEffs[,-1])
+}
 
 # ifelse() that can return a NULL
 #   needed here but probably has horrible side effects if not used with care

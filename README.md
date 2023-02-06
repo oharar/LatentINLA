@@ -18,7 +18,7 @@ This package is made to play around with latent variable models in INLA.
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/oharar/LatentINLA/workflows/R-CMD-check/badge.svg)](https://github.com/oharar/LatentINLA/actions)
+[![R-CMD-check](https://github.com/oharar/LatentINLA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/oharar/LatentINLA/actions/workflows/R-CMD-check.yaml)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/LatentINLA)](https://CRAN.R-project.org/package=LatentINLA)
 [![Lifecycle:

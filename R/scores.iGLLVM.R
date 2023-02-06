@@ -21,7 +21,7 @@
 #'@export scores.iGLLVM
 
 scores.iGLLVM <- function(object,which="all", type.posterior.stat="mean", ...){
-  if(class(object)!="iGLLVM"){
+  if(!inherits(object,"iGLLVM")){
     stop("Object needs to be of class iGLLVM.")
   }
   if(!type.posterior.stat%in%c("mean","mode")){

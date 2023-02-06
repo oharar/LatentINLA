@@ -3,6 +3,7 @@
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
 #' @param X A data frame or matrix of covariates (not used yet)
 #' @param nLVs The number of latent variables required
+#' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
 #' @param INLAobj Should the full INLA object be included in the output object?
 #' Defaults to FALSE
@@ -35,7 +36,8 @@
 #' }
 #' @export
 
-FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {
+FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian",
+                                ColScorePriorsd=10, INLAobj = FALSE, ...) {
 
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -49,7 +51,6 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   if(nLVs<1 ) stop("nLVs should be positive")
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
-
   if(nLVs>1) warning("This might not work yet: INLA may crash.")
 
 
@@ -84,20 +85,8 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   dataLVs <- cbind(Y, L=matrix(0, ncol=nLVs, nrow = nrow(Y),
                                dimnames = list(NULL, paste0("L", 1:nLVs))))
 
-  LV1 <- MakeLVsFromDataFrame(dat=dataLVs, nLVs=nLVs)
-  LVs <- sapply(1:length(LV1), function(l, lvs, nm) {
-    lv <- lvs[[l]][,-1]
-    names(lv) <- nm[(1+l):length(nm)]
-    Keep <- !grepl("L", names(lv)) | grepl(paste0("L", l), names(lv))
-
-    # Fix names to be consistent
-    lv <- lv[,Keep]
-    colnames(lv) <- paste(colnames(lv), l, sep=".")
-    lv
-  }, lvs=LV1, nm=colnames(dataLVs))
-
-  if(nLVs==1) LVs <- as.data.frame(LVs)
-  names(LVs) <- names(LV1)
+  LVs <- MakeLVsFromDataFrame(dat=dataLVs, nLVs=nLVs)
+  LatentVectors <- as.data.frame(LVs)
 
   # lapply(LVs, function(df) apply(df, 2, function(x) which(!is.na(x))[1]))
 
@@ -107,7 +96,7 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   # Repeat X for each latent variable
   # eps is the unexplained variation in each LV
   CovariateNames <- colnames(X)
-  X.eps <- cbind(X, eps=1:nrow(X))
+  X.eps <- as.matrix(cbind(X, eps=1:nrow(X)))
   XToCov <- do.call(Matrix::bdiag, replicate(nLVs, X.eps, simplify=FALSE))
 
   DatToCov <- list(XToCov,
@@ -119,10 +108,8 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   Cov.dat <- UnSparseMartix(Cov.sparse)
   colnames(Cov.dat) <- apply(expand.grid(colnames(X.eps), names(LVs)), 1, paste0, collapse=".")
 
-  # Add Column effects
-  # Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y), NA), each=nrow(Y)))
-  # colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
-
+  # set predictor effects to a lower triangular matrix
+  Cov.dat <- Cov.dat[,-unlist(sapply(2:nLVs,function(q,p)p*(q-1)+seq(q-1,1)+(q-1),simplify=F, p = ncol(X)))]#+(q-1) for "eps" at end of each predictor sequence
 
   ################
   # Create weights
@@ -130,19 +117,24 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
              function(v) ifelse(v==0, NA, -1))
   colnames(w) <- paste0("w.", names(LVs))
 
+
+  # Add Column effects
+  # Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y), NA), each=nrow(Y)))
+  # colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
+
   # Merge all of the data together
   # Covariates, latent variable indices, weights, responses
-  if(nLVs==1) {
-    Data <- cbind(data.frame(Cov.dat),
-                  data.frame(LVs[[1]]),
-                  w)
-    colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
-    colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
-  } else {
+  # if(nLVs==1) {
+  #   Data <- cbind(data.frame(Cov.dat),
+  #                 data.frame(LatentVectors[[1]]),
+  #                 w)
+  #   colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
+  #   colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
+  # } else {
     Data <- cbind(Cov.dat,
-                  data.frame(LVs),
+                  data.frame(LatentVectors),
                   w)
-  }
+  # }
   Data$Y <- dat
 
   #########################
@@ -154,7 +146,7 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
            " + ",
            paste("f(", colnames(Cov.dat)[grepl("eps.", colnames(Cov.dat))], ", model='iid')", collapse  = " + "),
            " + ",
-           CreateFormulaRHS(LVs=LVs, constrained = TRUE))
+           CreateFormulaRHS(LVs=LVs, constrained = TRUE, prior.beta = ColScorePriorsd))
   )
 
   # fit the model
@@ -167,8 +159,11 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   # Need to add missing species to output
   ColScores <- AddFixedColScores(model)
 
+  # Need to add missing predictor effects to output
+  FixedEffs <- AddFixedPredEffs(model)
+
   res <- list(
-    fixed = model$summary.fixed,
+    fixed = FixedEffs,
     colscores = ColScores,
     roweffs = model$summary.random[grep("\\.L", names(model$summary.random))],
     formula = Formula,

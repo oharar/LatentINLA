@@ -3,6 +3,7 @@
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
 #' @param X A data frame or matrix of covariates (not used yet)
 #' @param nLVs The number of latent variables required
+#' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
 #' @param INLAobj Should the full INLA object be included in the output object?
 #' Defaults to FALSE
@@ -35,7 +36,8 @@
 #' }
 #' @export
 
-FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE, ...) {
+FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian",
+                                ColScorePriorsd=10, INLAobj = FALSE, ...) {
 
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
@@ -106,16 +108,19 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
   Cov.dat <- UnSparseMartix(Cov.sparse)
   colnames(Cov.dat) <- apply(expand.grid(colnames(X.eps), names(LVs)), 1, paste0, collapse=".")
 
-  # Add Column effects
-  # Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y), NA), each=nrow(Y)))
-  # colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
-
+  # set predictor effects to a lower triangular matrix
+  Cov.dat <- Cov.dat[,-unlist(sapply(2:nLVs,function(q,p)p*(q-1)+seq(q-1,1)+(q-1),simplify=F, p = ncol(X)))]#+(q-1) for "eps" at end of each predictor sequence
 
   ################
   # Create weights
   w <- apply(as.matrix(Cov.dat[,grep("eps", colnames(Cov.dat))]), 2,
              function(v) ifelse(v==0, NA, -1))
   colnames(w) <- paste0("w.", names(LVs))
+
+
+  # Add Column effects
+  # Cov.dat <- cbind(Cov.dat, rep(c(1:ncol(Y), NA), each=nrow(Y)))
+  # colnames(Cov.dat) <- c("epsilon", "X1", "X2", "Column")
 
   # Merge all of the data together
   # Covariates, latent variable indices, weights, responses
@@ -141,21 +146,24 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian", INLAobj = FALSE
            " + ",
            paste("f(", colnames(Cov.dat)[grepl("eps.", colnames(Cov.dat))], ", model='iid')", collapse  = " + "),
            " + ",
-           CreateFormulaRHS(LVs=LVs, constrained = TRUE))
+           CreateFormulaRHS(LVs=LVs, constrained = TRUE, prior.beta = ColScorePriorsd))
   )
 
   # fit the model
   if(length(Family)==1) Family.Y <- rep(Family, ncol(Y))
   Fam <- c(Family.Y, rep("gaussian", nLVs))
 
-  model <- INLA::inla(Formula, data=Data, family = Fam)
+  model <- INLA::inla(Formula, data=Data, family = Fam, ...)
   #  model <- INLA::inla(Formula, data=Data, family = Fam)
 
   # Need to add missing species to output
   ColScores <- AddFixedColScores(model)
 
+  # Need to add missing predictor effects to output
+  FixedEffs <- AddFixedPredEffs(model)
+
   res <- list(
-    fixed = model$summary.fixed,
+    fixed = FixedEffs,
     colscores = ColScores,
     roweffs = model$summary.random[grep("\\.L", names(model$summary.random))],
     formula = Formula,

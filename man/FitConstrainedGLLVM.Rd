@@ -4,7 +4,7 @@
 \alias{FitConstrainedGLLVM}
 \title{Fits a GLLVM to data}
 \usage{
-FitConstrainedGLLVM(Y, X, nLVs = 1, Family = "gaussian", INLAobj = FALSE, ...)
+FitConstrainedGLLVM(Y, X, nLVs = 1, Family = "gaussian", ColScorePriorsd = 10,  INLAobj = FALSE, ...)
 }
 \arguments{
 \item{Y}{A data frame or matrix with the response (assuming counts at the moment)}

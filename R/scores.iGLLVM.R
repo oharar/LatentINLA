@@ -1,6 +1,4 @@
-
 #' @title Extract scores from iGLLVM object
-#'
 #'
 #' @param object an object of class 'iGLLVM'
 #' @param which which scores to retrieve: all, sites, or species

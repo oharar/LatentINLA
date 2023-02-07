@@ -1,6 +1,5 @@
 #' @title Create biplot from iGLLVM object
 #'
-#'
 #' @param object an object of class 'iGLLVM'
 #' @param type.posterior.stat which statistic to use from the posterior distributions: mean or mode
 #' @param which.lvs vector of length two with indexes of LVs to plot

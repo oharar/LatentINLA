@@ -3,8 +3,9 @@ Type: Package
 Title: Package to Write GLLVMs in INLA
 Version: 0.1.1
 Author: Bob O'Hara
-Authors@R: person("Bob", "O'Hara", email = "bob.ohara@ntnu.no",
-  role = c("aut", "cre"))
+Authors@R: c(person("Bob", "O'Hara", email = "bob.ohara@ntnu.no",role = c("aut", "cre")),
+             person("Bert", "van der Veen", role="aut")
+             )
 Description: The package implements some GLLVMs in INLA, hopefully in a way that the code can be adapted to new problems that we have not imagined yet.
     At the moment, the GLLVM package is probably a better bet for what you want.
 License: GPL-3

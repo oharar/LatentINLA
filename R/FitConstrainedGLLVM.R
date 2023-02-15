@@ -1,7 +1,7 @@
 #' Fits a GLLVM to data
 #'
-#' @param Y A data frame or matrix with the response (assuming counts at the moment)
-#' @param X A data frame or matrix of covariates (not used yet)
+#' @param Y A data frame or matrix with the response
+#' @param X A data frame or matrix of covariates
 #' @param formula for predictors in the ordination
 #' @param nLVs The number of latent variables required
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.

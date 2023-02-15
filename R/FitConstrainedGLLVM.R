@@ -53,7 +53,13 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian",
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
   if(nLVs>1) warning("This might not work yet: INLA may crash.")
 
-
+  #if non-numeric columns turn into a design matrix
+  if(any(apply(X,2,typeof)%in%c("character","factor"))){
+    X <- model.matrix(~., X)[,-1]
+    # check for special symbols in column names that could mess with INLA
+    # not the most elegant solution currently, should still improve to pick the ones out that error
+    colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
+  }
   ########################
   # Format Y, including LVs
 

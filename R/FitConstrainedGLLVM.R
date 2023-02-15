@@ -72,6 +72,7 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
     }
     
   }
+  if(ncol(X)>nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
   ########################
   # Format Y, including LVs
 

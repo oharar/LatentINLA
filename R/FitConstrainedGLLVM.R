@@ -57,9 +57,9 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
       X <- model.matrix(~., data.frame(X))
       }else{
         X <- model.matrix(formula, data.frame(X))
-        if(colnames(X)%in%c("(Intercept)")){
-          X <- X[,-which(colnames(X)=="(Intercept)")]
-        }
+      }
+      if(any(colnames(X)%in%c("(Intercept)"))){
+      X <- X[,-which(colnames(X)=="(Intercept)")]
       }
     # check for special symbols in column names that could mess with INLA
     # not the most elegant solution currently, should still improve to pick the ones out that error

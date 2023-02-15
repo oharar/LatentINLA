@@ -53,6 +53,7 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
   if(nLVs>1) warning("This might not work yet: INLA may crash.")
+  if(ncol(X)>nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
 
   #into a design matrix
     if(is.null(formula)){
@@ -70,7 +71,6 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
       colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
     }
 
-  if(ncol(X)>nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
   ########################
   # Format Y, including LVs
 

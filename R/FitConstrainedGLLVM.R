@@ -6,13 +6,11 @@
 #' @param nLVs The number of latent variables required
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
 #' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
-#' @param INLAobj Should the full INLA object be included in the output object?
-#' Defaults to FALSE
+#' @param INLAobj Should the full INLA object be included in the output object? Defaults to FALSE
 #' @param ... More arguments to be passed to inla()
 #' @return A list with fixed, colscores, and roweffs:
 #' the posterior summaries for the fixed effects, the column scores and the row
 #' effects respectively
-
 #' @examples
 #' set.seed(2021)
 #' NRows <- 200
@@ -26,7 +24,6 @@
 #'             dimnames = list(NULL, paste0("X", 1:NCovs)))
 #' LV.true <- rowSums(apply(X, 2, scale)%*%CovBeta)
 #' E.Y <- Intercept+LV.true%*%ColEffs
-
 #' TrueFixed <- c(Intercept, CovBeta)
 #' Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
 #' colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
@@ -53,7 +50,7 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
   if(nLVs>=ncol(Y)) stop(paste0("Must have fewer LVs than columns: reduce nLVs"))
   if(nLVs>10) warning(paste0("nLVs should be small: do you really want ", nLVs, " of them?"))
   if(nLVs>1) warning("This might not work yet: INLA may crash.")
-  if(ncol(X)>nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
+  if(ncol(X)<nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
 
   #into a design matrix
     if(is.null(formula)){

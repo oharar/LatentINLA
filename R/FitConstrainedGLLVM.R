@@ -2,6 +2,7 @@
 #'
 #' @param Y A data frame or matrix with the response (assuming counts at the moment)
 #' @param X A data frame or matrix of covariates (not used yet)
+#' @param formula for predictors in the ordination
 #' @param nLVs The number of latent variables required
 #' @param Family A string indicating the likelihood family. If length 1, it gets repeated with one for each column of the data.
 #' @param ColScorePriorsd Prior standard deviation for column scores (the betas for INLA insiders), defaults to 10
@@ -36,9 +37,9 @@
 #' }
 #' @export
 
-FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian",
+FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
                                 ColScorePriorsd=10, INLAobj = FALSE, ...) {
-
+  if(!is.null(formula)&!inherits(formula,"formula"))stop("'formula' must be a formula-type object")
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
@@ -55,10 +56,21 @@ FitConstrainedGLLVM <- function(Y, X, nLVs=1, Family="gaussian",
 
   #if non-numeric columns turn into a design matrix
   if(any(apply(X,2,typeof)%in%c("character","factor"))){
-    X <- model.matrix(~., X)[,-1]
+    if(is.null(formula)){
+      X <- model.matrix(~., X)
+      }else{
+        X <- model.matrix(formula, X)
+        if(colnames(X)%in%c("(Intercept)")){
+          X <- X[,-which(colnames(X)=="(Intercept)")]
+        }
+      }
     # check for special symbols in column names that could mess with INLA
     # not the most elegant solution currently, should still improve to pick the ones out that error
-    colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
+    if(length(grep("[[:punct:]]",x))>0){
+      warning("Special characters will be removed from column names.\n")
+      colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
+    }
+    
   }
   ########################
   # Format Y, including LVs

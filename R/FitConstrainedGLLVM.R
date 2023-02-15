@@ -57,9 +57,9 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
   #if non-numeric columns turn into a design matrix
   if(any(apply(X,2,typeof)%in%c("character","factor"))){
     if(is.null(formula)){
-      X <- model.matrix(~., X)
+      X <- model.matrix(~., data.frame(X))
       }else{
-        X <- model.matrix(formula, X)
+        X <- model.matrix(formula, data.frame(X))
         if(colnames(X)%in%c("(Intercept)")){
           X <- X[,-which(colnames(X)=="(Intercept)")]
         }

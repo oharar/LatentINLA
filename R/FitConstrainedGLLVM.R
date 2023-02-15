@@ -65,7 +65,7 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
       }
     # check for special symbols in column names that could mess with INLA
     # not the most elegant solution currently, should still improve to pick the ones out that error
-    if(length(grep("[[:punct:]]",x))>0){
+    if(length(grep("[[:punct:]]",colnames(X)))>0){
       warning("Special characters will be removed from column names.\n")
       colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
     }

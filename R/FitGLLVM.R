@@ -143,12 +143,16 @@ FitGLLVM <- function(Y, X=NULL, W=NULL, nLVs=1, Family="gaussian",
     attr(eval(str2expression(X)), "formpart"))
 
 # Write formula
-  Formula <- formula(paste0("Y~", paste0(unlist(attr(Data, "formpart")), collapse="+")))
+  Formula <- formula("Y ~ 1")
+  for(f in 1:length(attr(Data, "formpart"))) {
+    Formula <- update(Formula, attr(Data, "formpart")[[f]])
+  }
 
     # fit the model
   if(length(Family)==1) Family <- rep(Family, ncol(Data$Y))
 
-  model <- INLA::inla(formula(Formula), data=Data, family = Family, ...)
+#  model <- INLA::inla(Formula, data=Data, family = Family)
+  model <- INLA::inla(Formula, data=Data, family = Family, ...)
 
 # Add missing species to colscores
   ColScores <- AddFixedColScores(model)

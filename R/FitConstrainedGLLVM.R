@@ -36,7 +36,8 @@
 
 FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
                                 ColScorePriorsd=10, INLAobj = FALSE, ...) {
-  if(!is.null(formula)&!inherits(formula,"formula"))stop("'formula' must be a formula-type object")
+  if(!is.null(formula)&!inherits(formula,"formula"))
+    stop("'formula' must be a formula-type object")
   if(any(!Family%in%names(INLA::inla.models()$likelihood))){
     stop(paste(unique(Family)[which(!unique(Family)%in%names(INLA::inla.models()$likelihood))],
                "is not a valid INLA family."))
@@ -53,20 +54,20 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
   if(ncol(X)<nLVs)stop("Number of latent variables must be less than, or equal to, the number of predictor variables.")
 
   #into a design matrix
-    if(is.null(formula)){
-      X <- model.matrix(~., data.frame(X))
-      }else{
-        X <- model.matrix(formula, data.frame(X))
-      }
-      if(any(colnames(X)%in%c("(Intercept)"))){
-      X <- X[,-which(colnames(X)=="(Intercept)")]
-      }
-    # check for special symbols in column names that could mess with INLA
-    # not the most elegant solution currently, should still improve to pick the ones out that error
-    if(length(grep("[[:punct:]]",colnames(X)))>0){
-      warning("Special characters will be removed from column names.\n")
-      colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
-    }
+  if(is.null(formula)){
+    X <- model.matrix(~., data.frame(X))
+  }else{
+    X <- model.matrix(formula, data.frame(X))
+  }
+  if(any(colnames(X)%in%c("(Intercept)"))){
+    X <- X[,-which(colnames(X)=="(Intercept)")]
+  }
+  # check for special symbols in column names that could mess with INLA
+  # not the most elegant solution currently, should still improve to pick the ones out that error
+  if(length(grep("[[:punct:]]",colnames(X)))>0){
+    warning("Special characters will be removed from column names.\n")
+    colnames(X) <- gsub("[[:punct:]]", "", colnames(X))
+  }
 
   ########################
   # Format Y, including LVs
@@ -145,23 +146,24 @@ FitConstrainedGLLVM <- function(Y, X, formula = NULL, nLVs=1, Family="gaussian",
   #   colnames(Data)[grep("Col", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("Col", colnames(Data))])
   #   colnames(Data)[grep("L1.", colnames(Data))] <- paste0("lv1.", colnames(Data)[grep("L1", colnames(Data))])
   # } else {
-    Data <- cbind(Cov.dat,
-                  data.frame(LatentVectors),
-                  w)
+  Data <- cbind(Cov.dat,
+                data.frame(LatentVectors),
+                w)
   # }
   Data$Y <- dat
 
   #########################
   # Write formula for model
   CovEff <- colnames(Cov.dat)
-  Formula <- formula(
-    paste0("Y ~ " ,
-           paste(colnames(Cov.dat)[!grepl("eps.", colnames(Cov.dat))], collapse  = " + "),
-           " + ",
-           paste("f(", colnames(Cov.dat)[grepl("eps.", colnames(Cov.dat))], ", model='iid')", collapse  = " + "),
-           " + ",
-           CreateFormulaRHS(LVs=LVs, constrained = TRUE, prior.beta = ColScorePriorsd))
+
+  f.tmp <- paste0("Y ~ " ,
+                  paste(colnames(Cov.dat)[!grepl("eps.", colnames(Cov.dat))], collapse  = " + "),
+                  " + ",
+                  paste("f(", colnames(Cov.dat)[grepl("eps.", colnames(Cov.dat))], ", model='iid')", collapse  = " + ")
   )
+  f2 <- CreateFormulaRHS(LVs=LVs, constrained = TRUE, prior.beta = ColScorePriorsd)
+  Formula <- update(formula(f.tmp), f2)
+
 
   # fit the model
   if(length(Family)==1) Family.Y <- rep(Family, ncol(Y))

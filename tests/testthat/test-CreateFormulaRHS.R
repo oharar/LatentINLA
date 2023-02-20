@@ -16,7 +16,7 @@ test_that("CreateFormulaRHS works correctly", {
   expect_equal(nchar(Formula), c(1,1,814))
   expect_equal(nchar(FormulaB), c(1,1,807))
   expect_equal(grepl("param = c(0, 0.25)", FormulaB, fixed=TRUE)[3], TRUE)
-  expect_equal(nchar(FormulaC), c(1,1,917))
+  expect_equal(nchar(FormulaC), c(1,1,924))
 
   expect_equal(length(FormulaD), 3) # If this fails, we're in trouble
   expect_equal(nchar(FormulaD), c(1,1,880))

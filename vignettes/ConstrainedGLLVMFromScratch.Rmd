@@ -165,8 +165,7 @@ set.seed(2021)
   TrueFixed <- c(Intercept, CovBeta)
   Y.mat <- apply(E.Y, 2, function(e) rpois(length(e), exp(e)))
   colnames(Y.mat) <- paste0("Col", 1:ncol(Y.mat))
-  
-  
+
 ```
 
 Next the data is (are? Fight it out among yourselves) formatted:
@@ -223,7 +222,7 @@ roweffs <- LVmodel$summary.random[grep("\\.L$", names(LVmodel$summary.random))]
 
 knitr::kable(cbind(fixed[!grepl("Col", rownames(fixed)),1:2], True=TrueFixed), 
              digits=3)
-
+  
 ```
 
 The fixed effects look good (and no, this wasn't after trying it several times). We can look at the column effects, plotting them against their true values. They also look OK.

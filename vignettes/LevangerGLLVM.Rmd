@@ -14,9 +14,8 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Forminifera Data GLLVM
 
-This is an analysis the much-used spider data. Everyone else uses is, so we will too.
+This is an analysis of plant data from central Norway. The data consist of counts of 90 plant species from quadrats throughout Levanger, a town on the Trondheim Fjord. Each site also has 32 environmental variables.
 
 First, set up and get the data:
 
@@ -32,7 +31,8 @@ Y <- Levanger$species[, useSpecies]
 We will use 1 latent variable. First we fit the model (of course), using a normal distribution, which does not really fit the structure of the data. 
 
 ```{r FormatModelNoCov, eval=TRUE, warning=FALSE}
-Lev <- FitGLLVM(Y=Y, Family="gaussian", nLVs = 1, 
+#Lev <- FitGLLVM(Y=Y, Family="gaussian", nLVs = 1, 
+Lev <- FitGLLVM(Y=Y, Family="poisson", nLVs = 1, 
                 RowEffPriorsd = 1, ColEffPriorsd = 1,
                 RowEff = "random", ColEff = "random", ColScorePriorsd=1)
 
@@ -75,7 +75,8 @@ X <- Levanger$site[, c("management", "soil_depth")]
 LevCov <- FitGLLVM(Y=Y, 
                       X=X, 
 #                   W=forminifera$traits[useSpecies, ],
-                   Family="gaussian", nLVs = 1, 
+#                   Family="gaussian", nLVs = 1, 
+                   Family="poisson", nLVs = 1, 
                 RowEffPriorsd = 1, ColEffPriorsd = 1,
                 RowEff = "random", ColEff = "random", ColScorePriorsd=1)
 

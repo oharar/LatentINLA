@@ -40,7 +40,8 @@ CreateFormulaRHS <- function(LVs, constrained=FALSE, prior.beta=100, hyperprior.
       #        form
     }, lvs=LVs, hyper=hyperprior.LV)
   }
-  res <- paste0(unlist(Copies), collapse =" + ")
-#  res <- Copies
-  res
+  #  res <- paste0(unlist(Copies), collapse =" + ")
+  res <- paste0(c(". ~ .", unlist(Copies)), collapse =" + ")
+
+  as.formula(res)
 }

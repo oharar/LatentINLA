@@ -70,7 +70,7 @@ FormatCovariateData <- function(X=NULL, intercept=FALSE, AddTerm = NULL,
     ToFormula <- names(res)
   }
 
-  attr(res, "formpart") <- paste0(ToFormula, collapse=" + ")
+  attr(res, "formpart") <- paste0(c(". ~ .", ToFormula), collapse=" + ")
   if(intercept)  attr(res, "formpart") <- paste0(attr(res, "formpart"), " - 1")
 
   if(!is.null(random)) {

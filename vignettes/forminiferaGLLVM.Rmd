@@ -33,7 +33,8 @@ We will use 2 latent variables. First we fit the model (of course). We will igno
 
 ```{r FormatModelNoCov, eval=TRUE, warning=FALSE}
 formin <- FitGLLVM(Y=Y, Family="poisson", nLVs = 2, 
-                   RowEff = "random", ColEff = "random", ColScorePriorsd=1)
+                   RowEff = "random", ColEff = "random", ColScorePriorsd=1,
+                   control.inla = list(int.strategy = "eb"))
 
 ```
 

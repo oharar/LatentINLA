@@ -33,8 +33,9 @@ test_that("AddFixedColScores works correctly", {
   Data$Y <- FormatDataFrameForLV(Yafcs)
   attr(Data, "formpart") <- attr(LatentVectors, "formpart")
 
-  Formula <- paste0("Y ~ ", paste0(unlist(attr(Data, "formpart")), collapse=" + "))
-  # fit the model
+  Formula <- update(formula("Y ~ 1"), unlist(attr(Data, "formpart")))
+
+    # fit the model
   Family <- rep(Family, ncol(Data$Y))
   model <- INLA::inla(formula(Formula), data=Data, family = Family)
 
